@@ -175,15 +175,14 @@ public:
         }
     }
 
-
     void visit(ast::VarDecl& node) override {
         if (symbolTable->getSymbol(node.getVarId())) {
             errorDef(node.getLine(), node.getVarId());
         }
-        // need to implement getOffset in symbolTable & need to finish declaring symbol structure for var and funcs
-        // then we can use this VVVV
-        /*symbolTable->addSymbol(node.getVarId(), Symbol(node.getVarId(), node.getVarType()));
-        printer.emitVar(node.getVarId(), node.getVarType(), symbolTable->getOffset(node.getVarId()));*/
+
+        symbolTable->addVariableSymbol(node.getVarId(), node.getVarType(), node.getLine());
+        printer.emitVar(node.getVarId(), node.getVarType(), symbolTable->getSymbol(node.getVarId())->getOffset());
+        node.getVarInitExp()->accept(*this);
     }
 
     void visit(ast::Assign& node) override {
@@ -195,8 +194,12 @@ public:
     }
 
     void visit(ast::Formal& node) override {
-        symbolTable->addSymbol(node.getFormalId(), Symbol(node.getFormalId(), node.getFormalType()));
-        printer.emitVar(node.getFormalId(), node.getFormalType(), symbolTable->getOffset(node.getFormalId()));
+        if (symbolTable->getSymbol(node.getFormalId())) {
+            errorDef(node.getLine(), node.getFormalId());
+        }
+
+        symbolTable->addParameterSymbol(node.getFormalId(), node.getFormalType(), node.getLine());
+        printer.emitVar(node.getFormalId(), node.getFormalType(), symbolTable->getSymbol(node.getFormalId())->getOffset());
     }
 
     void visit(ast::Formals& node) override {
@@ -210,10 +213,11 @@ public:
             errorDef(node.getLine(), node.getFuncId());
         }
 
-        // need to add here func params in symbol intit (need to change symbol implementation)
-        // need to create a aux funxtion to transfer types list to string list
-        symbolTable->addSymbol(node.getFuncId(), Symbol(node.getFuncId(), node.getFuncReturnType()));
-        //printer.emitFunc(node.getFuncId(), node.getFuncReturnType(), -- params types in strings -- );
+        std::vector<BuiltInType> paramsTypes = node.getFuncParams()->getFormalsType();
+        std::vector<std::string> paramsIds = node.getFuncParams()->getFormalsIds();
+
+        symbolTable->addFunctionSymbol(node.getFuncId(), node.getFuncReturnType(), paramsTypes, paramsIds, node.getLine());
+        printer.emitFunc(node.getFuncId(), node.getFuncReturnType(), paramsTypes);
 
         beginScope();
         node.getFormals()->accept(*this);

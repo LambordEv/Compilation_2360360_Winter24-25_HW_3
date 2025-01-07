@@ -2,15 +2,14 @@
 #define SCOPE_HPP
 
 #include "Symbol.hpp"
+#include "output.hpp"
 #include <unordered_map>
 #include <memory>
 #include <stdexcept>
 
 class Scope {
-public:
-    Scope* parent;
-
 private:
+    Scope* parent;
     std::unordered_map<std::string, Symbol> symbolTable;
     int nextOffset;
     int nextParamOffset;
@@ -21,20 +20,27 @@ public:
           nextOffset(0),
           nextParamOffset(-1) {}
 
-    void addVariableSymbol(const std::string& name, const Symbol& symbol) {
-        /*if (symbolTable.count(name) > 0) {
-            //erroDef
-        }*/
-        symbolTable[name] = Symbol(name, symbol.getType(), nextOffset);
-        ++nextOffset;
+    void addVariableSymbol(const std::string& name, Symbol::DataType datatype, int lineno) {
+        if (symbolTable.count(name) > 0) {
+            errorDef(lineno, name);
+        }
+        symbolTable[name] = Symbol(name, Symbol::SymbolType::VARIABLE, datatype, nextOffset++);
     }
 
-    void addParameterSymbol(const std::string& name, const Symbol& symbol) {
-        /*if (symbolTable.count(name) > 0) {
-            //erroDef
-        }*/
-        symbolTable[name] = Symbol(name, symbol.getType(), nextParamOffset);
-        --nextParamOffset;
+    void addParameterSymbol(const std::string& name, Symbol::DataType datatype, int lineno) {
+        if (symbolTable.count(name) > 0) {
+            errorDef(lineno, name);
+        }
+        symbolTable[name] = Symbol(name, Symbol::SymbolType::VARIABLE, datatype, nextParamOffset--);
+    }
+
+    void addFunctionSymbol(const std::string& name, Symbol::DataType returnType,
+        const std::vector<Symbol::DataType>& paramTypes,
+        const std::vector<std::string>& paramNames, int lineno) {
+        if (symbolTable.count(name) > 0) {
+            errorDef(lineno, name);
+        }
+        symbolTable[name] = Symbol(name, Symbol::SymbolType::FUNCTION, returnType, paramTypes, paramNames);
     }
 
     Symbol* getSymbol(const std::string& name) {
@@ -42,16 +48,7 @@ public:
         if (it != symbolTable.end()) {
             return &it->second;
         }
-
-        Scope* next = parent;
-        while (next) {
-            it = next->symbolTable.find(name);
-            if (it != next->symbolTable.end()) {
-                return &it->second;
-            }
-            next = next->parent;
-        }
-        return nullptr;
+        return parent ? parent->getSymbol(name) : nullptr;
     }
 
     int getNextOffset() const {
