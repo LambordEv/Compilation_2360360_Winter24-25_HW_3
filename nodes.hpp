@@ -48,8 +48,8 @@ namespace ast {
         // Use this constructor only while parsing in bison or flex
         Node();
         int getLine() const { return line; }
-        virtual int getValue() const { return text; }
-        virtual BuiltInType getType() { return BuiltInType::TYPE_ERROR; }
+        //virtual std::string getValue() const { return text; }
+        virtual BuiltInType getType() const { return BuiltInType::TYPE_ERROR; }
         // Accept method for visitor pattern
         virtual void accept(Visitor &visitor) = 0;
     };
@@ -72,7 +72,7 @@ namespace ast {
 
         // Constructor that receives a C-style string that represents the number
         explicit Num(std::string str);
-        int getValue() const override { return value; }
+        int getValue() const { return value; }
         BuiltInType getType() const override { return BuiltInType::INT; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
@@ -87,7 +87,7 @@ namespace ast {
 
         // Constructor that receives a C-style (including b character) string that represents the number
         explicit NumB(std::string str);
-        int getValue() const override { return value; }
+        int getValue() const { return value; }
         BuiltInType getType() const override { return BuiltInType::BYTE; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
@@ -102,7 +102,7 @@ namespace ast {
 
         // Constructor that receives a C-style string that represents the string *including quotes*
         explicit String(std::string str);
-        std::string getValue() const override { return value; }
+        std::string getValue() const { return value; }
         BuiltInType getType() const override { return BuiltInType::STRING; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
@@ -117,7 +117,7 @@ namespace ast {
 
         // Constructor that receives the boolean value
         explicit Bool(bool value);
-        bool getValue() const override { return value; }
+        bool getValue() const { return value; }
         BuiltInType getType() const override { return BuiltInType::BOOL; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
@@ -132,7 +132,7 @@ namespace ast {
 
         // Constructor that receives a C-style string that represents the identifier
         explicit ID(std::string str);
-        std::string getValue() const override { return value; }
+        std::string getValue() const { return value; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -183,7 +183,7 @@ namespace ast {
         RelOp(RelOpType op, std::shared_ptr<Exp> left = nullptr, std::shared_ptr<Exp> right = nullptr);
         std::shared_ptr<Exp> getLeft() const { return left; }
         std::shared_ptr<Exp> getRight() const { return right; }
-        BinOpType getOp() const { return op; }
+        RelOpType getOp() const { return op; }
         BuiltInType getType() const override { 
             if ((left->getType() == BuiltInType::BYTE && right->getType() == BuiltInType::BYTE) ||
                 (left->getType() == BuiltInType::INT && right->getType() == BuiltInType::INT) ||
@@ -206,7 +206,7 @@ namespace ast {
 
         // Constructor that receives the operand
         explicit Not(std::shared_ptr<Exp> exp);
-        std::shared_ptr<Exp> getExp() const { return exp; }
+        std::shared_ptr<Exp> getExpr() const { return exp; }
         BuiltInType getType() const override { 
             if (exp->getType() == BuiltInType::BOOL) {
                 return BuiltInType::BOOL;
@@ -288,7 +288,7 @@ namespace ast {
 
         // Constructor that receives the expression and the target type
         Cast(std::shared_ptr<Exp> exp, std::shared_ptr<Type> type);
-        std::shared_ptr<Exp> getExp() const { return exp; }
+        std::shared_ptr<Exp> getExpr() const { return exp; }
         BuiltInType getTargetType() const { return target_type->getTypeOfType(); }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
@@ -313,9 +313,9 @@ namespace ast {
         // Method to add an expression at the end of the list
         void push_back(const std::shared_ptr<Exp> &exp);
 
-        std::vector<std::shared_ptr<Exp>> getExps() const { return exps; }
+        std::vector<std::shared_ptr<Exp>> getExpressions() const { return exps; }
 
-        std::vector<BuiltInType> getType() const override {
+        std::vector<BuiltInType> getExpListType() const {
             std::vector<BuiltInType> types;
             for(auto& exp : exps) {
                 types.push_back(exp->getType());
@@ -342,7 +342,7 @@ namespace ast {
         // Constructor that receives only the function identifier (for parameterless functions)
         explicit Call(std::shared_ptr<ID> func_id);
 
-        std::shared_ptr<ID> getFuncId() const { return func_id; }
+        std::string getFuncId() const { return func_id->getValue(); }
 
         std::shared_ptr<ExpList> getArgs() const { return args; }
 
@@ -400,6 +400,7 @@ namespace ast {
         // Constructor that receives the expression to be returned
         explicit Return(std::shared_ptr<Exp> exp = nullptr);
 
+        std::shared_ptr<Exp> getExpr() const { return exp; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -529,7 +530,7 @@ namespace ast {
 
         // Method to get a vector of formal parameter IDs
         std::vector<std::string> getFormalsIds() const {
-            std::vector<std::shared_ptr<ID>> ids;
+            std::vector<std::string> ids;
             for (const auto &formal : formals) {
                 ids.push_back(formal->getFormalId());
             }
@@ -538,7 +539,7 @@ namespace ast {
 
         // Method to get a vector of formal parameter types
         std::vector<BuiltInType> getFormalsType() const {
-            std::vector<std::shared_ptr<Type>> types;
+            std::vector<BuiltInType> types;
             for (const auto &formal : formals) {
                 types.push_back(formal->getFormalType());
             }
@@ -569,7 +570,7 @@ namespace ast {
         std::string getFuncId() const { return id->getValue(); }
         BuiltInType getFuncReturnType() const { return return_type->getTypeOfType(); }
         std::shared_ptr<Formals> getFuncParams() const { return formals; }
-        std::shared_ptr<Statements> getFuncsBody() const { return body; }
+        std::shared_ptr<Statements> getFuncBody() const { return body; }
 
         void accept(Visitor &visitor) override {
             visitor.visit(*this);

@@ -148,10 +148,11 @@ public:
         node.getExpr()->accept(*this);
 
         // Check if return type matches the function's return type
-        Symbol* func = symbolTable->getCurrentFunction();
+        // need to implement getCurrentFunction() in symbolTable
+        /*Symbol* func = symbolTable->getCurrentFunction();
         if (func && func->getDataType() != node.getExpr()->getType()) {
             errorMismatch(node.getLine());
-        }
+        }*/
     }
 
     void visit(ast::If& node) override {
@@ -161,7 +162,7 @@ public:
             node.getElse()->accept(*this);
         }
 
-        if (node.getCondition->getType() != BuiltInType::BOOL) {
+        if (node.getCondition()->getType() != BuiltInType::BOOL) {
             errorMismatch(node.getLine());
         }
     }
@@ -170,7 +171,7 @@ public:
         node.getCondition()->accept(*this);
         node.getBody()->accept(*this);
 
-        if (node.getCondition->getType() != BuiltInType::BOOL) {
+        if (node.getCondition()->getType() != BuiltInType::BOOL) {
             errorMismatch(node.getLine());
         }
     }
@@ -220,8 +221,8 @@ public:
         printer.emitFunc(node.getFuncId(), node.getFuncReturnType(), paramsTypes);
 
         beginScope();
-        node.getFormals()->accept(*this);
-        node.getBody()->accept(*this);
+        node.getFuncParams()->accept(*this);
+        node.getFuncBody()->accept(*this);
         endScope();
     }
 

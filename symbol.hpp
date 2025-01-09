@@ -6,33 +6,37 @@
 #include "nodes.hpp"
 using namespace ast;
 
-class Symbol {
-public:
-    enum class SymbolType {
-        VARIABLE,
-        FUNCTION
-    };
+enum class SymbolType {
+    VARIABLE,
+    FUNCTION
+};
 
-    " from ast namespace:
-    /* Built-in types */
-    enum BuiltInType {
-        TYPE_ERROR = -1,
-        VOID,
-        BOOL,
-        BYTE,
-        INT,
-        STRING
-    };"
+/*from ast namespace:
+    Built-in types 
+enum BuiltInType {
+    TYPE_ERROR = -1,
+    VOID,
+    BOOL,
+    BYTE,
+    INT,
+    STRING
+}; */
+
+class Symbol {
 
 private:
-    std::string name;                   // Name of the symbol
-    SymbolType symbolType;              // VARIABLE or FUNCTION
-    BuiltInType dataType;                  // Data type (e.g., INT, BYTE, BOOL, etc.)
-    int offset;                         // Memory offset (for variables or parameters)
-    std::vector<BuiltInType> parameterTypes; // Function parameter types
-    std::vector<std::string> parameterNames; // Function parameter names
+std::string name;                   // Name of the symbol
+SymbolType symbolType;              // VARIABLE or FUNCTION
+BuiltInType dataType;                  // Data type (e.g., INT, BYTE, BOOL, etc.)
+int offset;                         // Memory offset (for variables or parameters)
+std::vector<BuiltInType> parameterTypes; // Function parameter types
+std::vector<std::string> parameterNames; // Function parameter names
 
 public:
+    // Default constructor
+    Symbol()
+        : name(""), symbolType(SymbolType::VARIABLE), dataType(BuiltInType::TYPE_ERROR), offset(0) {}
+
     // Constructor for variables
     Symbol(const std::string& name, SymbolType symbolType, BuiltInType dataType, int offset)
         : name(name), symbolType(symbolType), dataType(dataType), offset(offset) {}
@@ -41,7 +45,7 @@ public:
     Symbol(const std::string& name, SymbolType symbolType, BuiltInType dataType,
            const std::vector<BuiltInType>& paramTypes, const std::vector<std::string>& paramNames)
         : name(name), symbolType(symbolType), dataType(dataType),
-          offset(0), isDefined(isDefined), parameterTypes(paramTypes), parameterNames(paramNames) {}
+          offset(0), parameterTypes(paramTypes), parameterNames(paramNames) {}
 
     // Getters
     const std::string& getName() const { return name; }

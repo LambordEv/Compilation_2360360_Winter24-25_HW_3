@@ -1,5 +1,9 @@
 #include "output.hpp"
 #include "nodes.hpp"
+#include "symbol.hpp"
+#include "scope.hpp"
+#include "symbolTable.hpp"
+#include "semanticAnalyzer.hpp"
 
 // Extern from the bison-generated parser
 extern int yyparse();

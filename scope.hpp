@@ -1,11 +1,13 @@
 #ifndef SCOPE_HPP
 #define SCOPE_HPP
 
-#include "Symbol.hpp"
+#include "symbol.hpp"
 #include "output.hpp"
 #include <unordered_map>
 #include <memory>
 #include <stdexcept>
+using namespace ast;
+using namespace output;
 
 class Scope {
 private:
@@ -20,27 +22,27 @@ public:
           nextOffset(0),
           nextParamOffset(-1) {}
 
-    void addVariableSymbol(const std::string& name, Symbol::DataType datatype, int lineno) {
+    void addVariableSymbol(const std::string& name, BuiltInType datatype, int lineno) {
         if (symbolTable.count(name) > 0) {
             errorDef(lineno, name);
         }
-        symbolTable[name] = Symbol(name, Symbol::SymbolType::VARIABLE, datatype, nextOffset++);
+        symbolTable[name] = Symbol(name, SymbolType::VARIABLE, datatype, nextOffset++);
     }
 
-    void addParameterSymbol(const std::string& name, Symbol::DataType datatype, int lineno) {
+    void addParameterSymbol(const std::string& name, BuiltInType datatype, int lineno) {
         if (symbolTable.count(name) > 0) {
             errorDef(lineno, name);
         }
-        symbolTable[name] = Symbol(name, Symbol::SymbolType::VARIABLE, datatype, nextParamOffset--);
+        symbolTable[name] = Symbol(name, SymbolType::VARIABLE, datatype, nextParamOffset--);
     }
 
-    void addFunctionSymbol(const std::string& name, Symbol::DataType returnType,
-        const std::vector<Symbol::DataType>& paramTypes,
+    void addFunctionSymbol(const std::string& name, BuiltInType returnType,
+        const std::vector<BuiltInType>& paramTypes,
         const std::vector<std::string>& paramNames, int lineno) {
         if (symbolTable.count(name) > 0) {
             errorDef(lineno, name);
         }
-        symbolTable[name] = Symbol(name, Symbol::SymbolType::FUNCTION, returnType, paramTypes, paramNames);
+        symbolTable[name] = Symbol(name, SymbolType::FUNCTION, returnType, paramTypes, paramNames);
     }
 
     Symbol* getSymbol(const std::string& name) {

@@ -1,7 +1,7 @@
 #ifndef SYMBOL_TABLE_HPP
 #define SYMBOL_TABLE_HPP
 
-#include "Scope.hpp"
+#include "scope.hpp"
 #include "nodes.hpp"
 using namespace ast;
 #include <memory>
@@ -19,8 +19,8 @@ public:
         globalScope = new Scope(nullptr);
         scopeStack.push(globalScope);
 
-        globalScope->addFunctionSymbol("print", BuiltInType::VOID, {BuiltInType::STRING}, -1);
-        globalScope->addFunctionSymbol("printi", BuiltInType::VOID, {BuiltInType::INT}, -1);
+        globalScope->addFunctionSymbol("print", BuiltInType::VOID, {BuiltInType::STRING}, {"str"}, -1);
+        globalScope->addFunctionSymbol("printi", BuiltInType::VOID, {BuiltInType::INT}, {"num"}, -1);
     }
 
     ~SymbolTable() {
