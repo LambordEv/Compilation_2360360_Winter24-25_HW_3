@@ -7,25 +7,28 @@
 #include <string>
 #include <stdexcept>
 #include <vector>
+#include <iostream>
 
 class SemanticAnalyzer : public Visitor {
 private:
-    SymbolTable* symbolTable;
+    // SymbolTable* symbolTable; 
+    SymbolTable symbolTable;
     output::ScopePrinter printer;
 
 public:
-    SemanticAnalyzer(SymbolTable* symbolTable)
-        : symbolTable(symbolTable) {}
+    // SemanticAnalyzer(SymbolTable* symbolTable)
+    //     : symbolTable(symbolTable) {}
+    SemanticAnalyzer() : symbolTable(), printer() {}
 
     // Start a new scope (for functions, blocks, if, while, etc.)
     void beginScope() {
-        symbolTable->beginScope();
+        symbolTable.beginScope();
         printer.beginScope();
     }
 
     // End the current scope
     void endScope() {
-        symbolTable->endScope();
+        symbolTable.endScope();
         printer.endScope();
     }
 
@@ -43,7 +46,7 @@ public:
     void visit(ast::Bool& node) override {}
 
     void visit(ast::ID& node) override {
-        Symbol* var = symbolTable->getSymbol(node.getValue());
+        Symbol* var = symbolTable.getSymbol(node.getValue());
         if (!var) {
             errorUndef(node.getLine(), node.getValue());
         }
@@ -108,7 +111,7 @@ public:
     }
 
     void visit(ast::Call& node) override {
-        Symbol* func = symbolTable->getSymbol(node.getFuncId());
+        Symbol* func = symbolTable.getSymbol(node.getFuncId());
         if (!func) {
             errorUndefFunc(node.getLine(), node.getFuncId());
         }
@@ -131,7 +134,7 @@ public:
     void visit(ast::Break& node) override {
         /* need to implement inLoopScope() in symbolTable */
         // then we can use this VVV
-        /* if (!symbolTable->inLoopScope()) {
+        /* if (!symbolTable.inLoopScope()) {
             errorUnexpectedBreak(node.getLine());
         }*/ 
     }
@@ -139,7 +142,7 @@ public:
     void visit(ast::Continue& node) override {
         /* need to implement inLoopScope() in symbolTable */
         // then we can use this VVV
-        /* if (!symbolTable->inLoopScope()) {
+        /* if (!symbolTable.inLoopScope()) {
             errorUnexpectedBreak(node.getLine());
         }*/ 
     }
@@ -149,7 +152,7 @@ public:
 
         // Check if return type matches the function's return type
         // need to implement getCurrentFunction() in symbolTable
-        /*Symbol* func = symbolTable->getCurrentFunction();
+        /*Symbol* func = symbolTable.getCurrentFunction();
         if (func && func->getDataType() != node.getExpr()->getType()) {
             errorMismatch(node.getLine());
         }*/
@@ -177,17 +180,17 @@ public:
     }
 
     void visit(ast::VarDecl& node) override {
-        if (symbolTable->getSymbol(node.getVarId())) {
+        if (symbolTable.getSymbol(node.getVarId())) {
             errorDef(node.getLine(), node.getVarId());
         }
 
-        symbolTable->addVariableSymbol(node.getVarId(), node.getVarType(), node.getLine());
-        printer.emitVar(node.getVarId(), node.getVarType(), symbolTable->getSymbol(node.getVarId())->getOffset());
+        symbolTable.addVariableSymbol(node.getVarId(), node.getVarType(), node.getLine());
+        printer.emitVar(node.getVarId(), node.getVarType(), symbolTable.getSymbol(node.getVarId())->getOffset());
         node.getVarInitExp()->accept(*this);
     }
 
     void visit(ast::Assign& node) override {
-        Symbol* var = symbolTable->getSymbol(node.getAssignId());
+        Symbol* var = symbolTable.getSymbol(node.getAssignId());
         if (!var) {
             errorUndef(node.getLine(), node.getAssignId());
         }
@@ -195,12 +198,12 @@ public:
     }
 
     void visit(ast::Formal& node) override {
-        if (symbolTable->getSymbol(node.getFormalId())) {
+        if (symbolTable.getSymbol(node.getFormalId())) {
             errorDef(node.getLine(), node.getFormalId());
         }
 
-        symbolTable->addParameterSymbol(node.getFormalId(), node.getFormalType(), node.getLine());
-        printer.emitVar(node.getFormalId(), node.getFormalType(), symbolTable->getSymbol(node.getFormalId())->getOffset());
+        symbolTable.addParameterSymbol(node.getFormalId(), node.getFormalType(), node.getLine());
+        printer.emitVar(node.getFormalId(), node.getFormalType(), symbolTable.getSymbol(node.getFormalId())->getOffset());
     }
 
     void visit(ast::Formals& node) override {
@@ -210,14 +213,10 @@ public:
     }
 
     void visit(ast::FuncDecl& node) override {
-        if (symbolTable->getSymbol(node.getFuncId())) {
-            errorDef(node.getLine(), node.getFuncId());
-        }
-
         std::vector<BuiltInType> paramsTypes = node.getFuncParams()->getFormalsType();
         std::vector<std::string> paramsIds = node.getFuncParams()->getFormalsIds();
 
-        symbolTable->addFunctionSymbol(node.getFuncId(), node.getFuncReturnType(), paramsTypes, paramsIds, node.getLine());
+        
         printer.emitFunc(node.getFuncId(), node.getFuncReturnType(), paramsTypes);
 
         beginScope();
@@ -227,9 +226,22 @@ public:
     }
 
     void visit(ast::Funcs& node) override {
+        // The (this) is the ScopePrinter
+        this->symbolTable.addFunctionSymbol("print", BuiltInType::VOID, {BuiltInType::STRING}, {"str"}, -1);
+        this->symbolTable.addFunctionSymbol("printi", BuiltInType::VOID, {BuiltInType::INT}, {"num"}, -1);
+
+        for (auto& funcDecl : node.getFuncs()) {
+            this->symbolTable.addFunctionSymbol(funcDecl->getFuncId(), funcDecl->getFuncReturnType(), funcDecl->getFuncParams()->getFormalsType(), 
+                funcDecl->getFuncParams()->getFormalsIds(), funcDecl->getLine());
+        }
+
         for (auto& funcDecl : node.getFuncs()) {
             funcDecl->accept(*this);
         }
+    }
+
+    void printResults() {
+        std::cout << printer;
     }
 };
 

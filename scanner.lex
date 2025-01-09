@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <iostream>
 #include "output.hpp"
-#include "parser.hpp"
+#include "parser.tab.h"
 
 
 /*------- Function Declarion Section -------*/

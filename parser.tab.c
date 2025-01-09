@@ -93,7 +93,7 @@ shared_ptr<Node> program;
 
 // TODO: Place any additional declarations here
 
-#line 97 "parser.cpp"
+#line 97 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -116,7 +116,7 @@ shared_ptr<Node> program;
 #  endif
 # endif
 
-#include "parser.hpp"
+#include "parser.tab.h"
 /* Symbol kind.  */
 enum yysymbol_kind_t
 {
@@ -1211,13 +1211,13 @@ yyreduce:
   case 2: /* Program: Funcs  */
 #line 65 "parser.y"
                { program = yyvsp[0]; }
-#line 1215 "parser.cpp"
+#line 1215 "parser.tab.c"
     break;
 
   case 3: /* Funcs: %empty  */
 #line 68 "parser.y"
        { yyval = make_shared<Funcs>(); }
-#line 1221 "parser.cpp"
+#line 1221 "parser.tab.c"
     break;
 
   case 4: /* Funcs: FuncDecl Funcs  */
@@ -1228,7 +1228,7 @@ yyreduce:
                 funcs_ptr->push_front(singleFunc_ptr);
                 yyval = funcs_ptr;
             }
-#line 1232 "parser.cpp"
+#line 1232 "parser.tab.c"
     break;
 
   case 5: /* FuncDecl: RetType T_ID T_LPAREN Formals T_RPAREN T_LBRACE Statements T_RBRACE  */
@@ -1240,37 +1240,37 @@ yyreduce:
                 shared_ptr<Statements> statements_ptr = dynamic_pointer_cast<Statements>(yyvsp[-1]);
                 yyval = make_shared<FuncDecl>(id_ptr, retType_ptr, formals_ptr, statements_ptr); 
             }
-#line 1244 "parser.cpp"
+#line 1244 "parser.tab.c"
     break;
 
   case 6: /* RetType: Type  */
 #line 87 "parser.y"
               { yyval = make_shared<Type>(whatTypeReceived(yyvsp[0]->text)); }
-#line 1250 "parser.cpp"
+#line 1250 "parser.tab.c"
     break;
 
   case 7: /* RetType: T_VOID  */
 #line 88 "parser.y"
                  { yyval = make_shared<Type>(whatTypeReceived(yyvsp[0]->text)); }
-#line 1256 "parser.cpp"
+#line 1256 "parser.tab.c"
     break;
 
   case 8: /* Formals: %empty  */
 #line 90 "parser.y"
          { yyval = make_shared<Formals>(); }
-#line 1262 "parser.cpp"
+#line 1262 "parser.tab.c"
     break;
 
   case 9: /* Formals: FormalsList  */
 #line 91 "parser.y"
                       { yyval = yyvsp[0]; }
-#line 1268 "parser.cpp"
+#line 1268 "parser.tab.c"
     break;
 
   case 10: /* FormalsList: FormalDecl  */
 #line 93 "parser.y"
                         { yyval = make_shared<Formals>(dynamic_pointer_cast<Formal>(yyvsp[0])); }
-#line 1274 "parser.cpp"
+#line 1274 "parser.tab.c"
     break;
 
   case 11: /* FormalsList: FormalDecl T_COMMA FormalsList  */
@@ -1281,7 +1281,7 @@ yyreduce:
             formals_ptr->push_front(singleFormal_ptr);
             yyval = formals_ptr;
         }
-#line 1285 "parser.cpp"
+#line 1285 "parser.tab.c"
     break;
 
   case 12: /* FormalDecl: Type T_ID  */
@@ -1291,13 +1291,13 @@ yyreduce:
                 shared_ptr<Type> retType_ptr = dynamic_pointer_cast<Type>(yyvsp[-1]);
                 yyval = make_shared<Formal>(id_ptr, retType_ptr); 
             }
-#line 1295 "parser.cpp"
+#line 1295 "parser.tab.c"
     break;
 
   case 13: /* Statements: Statement  */
 #line 109 "parser.y"
                       { yyval = make_shared<Statements>(dynamic_pointer_cast<Statement>(yyvsp[0])); }
-#line 1301 "parser.cpp"
+#line 1301 "parser.tab.c"
     break;
 
   case 14: /* Statements: Statements Statement  */
@@ -1308,13 +1308,13 @@ yyreduce:
                 statements_ptr->push_back(singleStatement_ptr);
                 yyval = statements_ptr;
             }
-#line 1312 "parser.cpp"
+#line 1312 "parser.tab.c"
     break;
 
   case 15: /* Statement: T_LBRACE Statements T_RBRACE  */
 #line 118 "parser.y"
                                         { yyval = yyvsp[-1]; }
-#line 1318 "parser.cpp"
+#line 1318 "parser.tab.c"
     break;
 
   case 16: /* Statement: Type T_ID T_SC  */
@@ -1324,7 +1324,7 @@ yyreduce:
                 shared_ptr<Type> type_ptr = dynamic_pointer_cast<Type>(yyvsp[-2]);
                 yyval = make_shared<VarDecl>(id_ptr, type_ptr); 
             }
-#line 1328 "parser.cpp"
+#line 1328 "parser.tab.c"
     break;
 
   case 17: /* Statement: Type T_ID T_ASSIGN Exp T_SC  */
@@ -1335,7 +1335,7 @@ yyreduce:
                 shared_ptr<Exp> exp_ptr = dynamic_pointer_cast<Exp>(yyvsp[-1]);
                 yyval = make_shared<VarDecl>(id_ptr, type_ptr, exp_ptr); 
             }
-#line 1339 "parser.cpp"
+#line 1339 "parser.tab.c"
     break;
 
   case 18: /* Statement: T_ID T_ASSIGN Exp T_SC  */
@@ -1345,25 +1345,25 @@ yyreduce:
                 shared_ptr<Exp> exp_ptr = dynamic_pointer_cast<Exp>(yyvsp[-1]);
                 yyval = make_shared<Assign>(id_ptr, exp_ptr); 
             }
-#line 1349 "parser.cpp"
+#line 1349 "parser.tab.c"
     break;
 
   case 19: /* Statement: Call T_SC  */
 #line 138 "parser.y"
                         { yyval = yyvsp[-1]; }
-#line 1355 "parser.cpp"
+#line 1355 "parser.tab.c"
     break;
 
   case 20: /* Statement: T_RETURN T_SC  */
 #line 139 "parser.y"
                             { yyval = make_shared<Return>(); }
-#line 1361 "parser.cpp"
+#line 1361 "parser.tab.c"
     break;
 
   case 21: /* Statement: T_RETURN Exp T_SC  */
 #line 140 "parser.y"
                                 { yyval = make_shared<Return>(dynamic_pointer_cast<Exp>(yyvsp[-1])); }
-#line 1367 "parser.cpp"
+#line 1367 "parser.tab.c"
     break;
 
   case 22: /* Statement: T_IF T_LPAREN Exp T_RPAREN Statement  */
@@ -1373,7 +1373,7 @@ yyreduce:
                 shared_ptr<Statement> statement_ptr = dynamic_pointer_cast<Statement>(yyvsp[0]);
                 yyval = make_shared<If>(exp_ptr, statement_ptr); 
             }
-#line 1377 "parser.cpp"
+#line 1377 "parser.tab.c"
     break;
 
   case 23: /* Statement: T_IF T_LPAREN Exp T_RPAREN Statement T_ELSE Statement  */
@@ -1384,7 +1384,7 @@ yyreduce:
                 shared_ptr<Statement> statement_ptr2 = dynamic_pointer_cast<Statement>(yyvsp[0]);
                 yyval = make_shared<If>(exp_ptr, statement_ptr1, statement_ptr2); 
             }
-#line 1388 "parser.cpp"
+#line 1388 "parser.tab.c"
     break;
 
   case 24: /* Statement: T_WHILE T_LPAREN Exp T_RPAREN Statement  */
@@ -1394,19 +1394,19 @@ yyreduce:
                 shared_ptr<Statement> statement_ptr = dynamic_pointer_cast<Statement>(yyvsp[0]);
                 yyval = make_shared<While>(exp_ptr, statement_ptr); 
             }
-#line 1398 "parser.cpp"
+#line 1398 "parser.tab.c"
     break;
 
   case 25: /* Statement: T_BREAK T_SC  */
 #line 160 "parser.y"
                            { yyval = make_shared<Break>(); }
-#line 1404 "parser.cpp"
+#line 1404 "parser.tab.c"
     break;
 
   case 26: /* Statement: T_CONTINUE T_SC  */
 #line 161 "parser.y"
                               { yyval = make_shared<Continue>(); }
-#line 1410 "parser.cpp"
+#line 1410 "parser.tab.c"
     break;
 
   case 27: /* Call: T_ID T_LPAREN ExpList T_RPAREN  */
@@ -1416,19 +1416,19 @@ yyreduce:
                 shared_ptr<ExpList> expList_ptr = dynamic_pointer_cast<ExpList>(yyvsp[-1]);
                 yyval = make_shared<Call>(id_ptr, expList_ptr); 
             }
-#line 1420 "parser.cpp"
+#line 1420 "parser.tab.c"
     break;
 
   case 28: /* Call: T_ID T_LPAREN T_RPAREN  */
 #line 169 "parser.y"
                                  { yyval = make_shared<Call>(make_shared<ID>(yyvsp[-2]->text)); }
-#line 1426 "parser.cpp"
+#line 1426 "parser.tab.c"
     break;
 
   case 29: /* ExpList: Exp  */
 #line 171 "parser.y"
              { yyval = make_shared<ExpList>(dynamic_pointer_cast<Exp>(yyvsp[0])); }
-#line 1432 "parser.cpp"
+#line 1432 "parser.tab.c"
     break;
 
   case 30: /* ExpList: Exp T_COMMA ExpList  */
@@ -1439,31 +1439,31 @@ yyreduce:
                 exp_list_ptr->push_front(exp_ptr);
                 yyval = exp_list_ptr;
             }
-#line 1443 "parser.cpp"
+#line 1443 "parser.tab.c"
     break;
 
   case 31: /* Type: T_INT  */
 #line 180 "parser.y"
               { yyval = make_shared<Type>(BuiltInType::INT); }
-#line 1449 "parser.cpp"
+#line 1449 "parser.tab.c"
     break;
 
   case 32: /* Type: T_BYTE  */
 #line 181 "parser.y"
                      { yyval = make_shared<Type>(BuiltInType::BYTE); }
-#line 1455 "parser.cpp"
+#line 1455 "parser.tab.c"
     break;
 
   case 33: /* Type: T_BOOL  */
 #line 182 "parser.y"
                      { yyval = make_shared<Type>(BuiltInType::BOOL); }
-#line 1461 "parser.cpp"
+#line 1461 "parser.tab.c"
     break;
 
   case 34: /* Exp: T_LPAREN Exp T_RPAREN  */
 #line 184 "parser.y"
                               { yyval = yyvsp[-1]; }
-#line 1467 "parser.cpp"
+#line 1467 "parser.tab.c"
     break;
 
   case 35: /* Exp: Exp T_MUL_DIV Exp  */
@@ -1475,7 +1475,7 @@ yyreduce:
 
                 yyval = make_shared<BinOp>(binOp, left_exp, right_exp);
             }
-#line 1479 "parser.cpp"
+#line 1479 "parser.tab.c"
     break;
 
   case 36: /* Exp: Exp T_ADD_SUB Exp  */
@@ -1487,55 +1487,55 @@ yyreduce:
 
                 yyval = make_shared<BinOp>(binOp, left_exp, right_exp);
             }
-#line 1491 "parser.cpp"
+#line 1491 "parser.tab.c"
     break;
 
   case 37: /* Exp: T_ID  */
 #line 201 "parser.y"
                    { yyval = make_shared<ID>(yyvsp[0]->text); }
-#line 1497 "parser.cpp"
+#line 1497 "parser.tab.c"
     break;
 
   case 38: /* Exp: Call  */
 #line 202 "parser.y"
                    { yyval = yyvsp[0]; }
-#line 1503 "parser.cpp"
+#line 1503 "parser.tab.c"
     break;
 
   case 39: /* Exp: T_NUM  */
 #line 203 "parser.y"
                     { yyval = make_shared<Num>(yyvsp[0]->text); }
-#line 1509 "parser.cpp"
+#line 1509 "parser.tab.c"
     break;
 
   case 40: /* Exp: T_NUM_B  */
 #line 204 "parser.y"
                       { yyval = make_shared<NumB>(yyvsp[0]->text); }
-#line 1515 "parser.cpp"
+#line 1515 "parser.tab.c"
     break;
 
   case 41: /* Exp: T_STRING  */
 #line 205 "parser.y"
                        { yyval = dynamic_pointer_cast<String>(yyvsp[0]); }
-#line 1521 "parser.cpp"
+#line 1521 "parser.tab.c"
     break;
 
   case 42: /* Exp: T_TRUE  */
 #line 206 "parser.y"
                      { yyval = make_shared<Bool>(true); }
-#line 1527 "parser.cpp"
+#line 1527 "parser.tab.c"
     break;
 
   case 43: /* Exp: T_FALSE  */
 #line 207 "parser.y"
                       { yyval = make_shared<Bool>(false); }
-#line 1533 "parser.cpp"
+#line 1533 "parser.tab.c"
     break;
 
   case 44: /* Exp: T_NOT Exp  */
 #line 208 "parser.y"
                         { yyval = make_shared<Not>(dynamic_pointer_cast<Exp>(yyvsp[0])); }
-#line 1539 "parser.cpp"
+#line 1539 "parser.tab.c"
     break;
 
   case 45: /* Exp: Exp T_AND Exp  */
@@ -1545,7 +1545,7 @@ yyreduce:
                 shared_ptr<Exp> exp_ptr2 = dynamic_pointer_cast<Exp>(yyvsp[0]);
                 yyval = make_shared<And>(exp_ptr1, exp_ptr2); 
             }
-#line 1549 "parser.cpp"
+#line 1549 "parser.tab.c"
     break;
 
   case 46: /* Exp: Exp T_OR Exp  */
@@ -1555,7 +1555,7 @@ yyreduce:
                 shared_ptr<Exp> exp_ptr2 = dynamic_pointer_cast<Exp>(yyvsp[0]);
                 yyval = make_shared<Or>(exp_ptr1, exp_ptr2); 
             }
-#line 1559 "parser.cpp"
+#line 1559 "parser.tab.c"
     break;
 
   case 47: /* Exp: Exp T_RELOP Exp  */
@@ -1567,7 +1567,7 @@ yyreduce:
                 RelOpType relop = whatRelOpRecieved(yyvsp[-1]->text);
                 yyval = make_shared<RelOp>(relop, left_exp, right_exp);
             }
-#line 1571 "parser.cpp"
+#line 1571 "parser.tab.c"
     break;
 
   case 48: /* Exp: T_LPAREN Type T_RPAREN Exp  */
@@ -1577,11 +1577,11 @@ yyreduce:
                 shared_ptr<Exp> exp_ptr = dynamic_pointer_cast<Exp>(yyvsp[0]);
                 yyval = make_shared<Cast>(exp_ptr, type_ptr); 
             }
-#line 1581 "parser.cpp"
+#line 1581 "parser.tab.c"
     break;
 
 
-#line 1585 "parser.cpp"
+#line 1585 "parser.tab.c"
 
       default: break;
     }

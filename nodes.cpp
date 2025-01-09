@@ -100,7 +100,9 @@ namespace ast {
     FuncDecl::FuncDecl(std::shared_ptr<ID> id, std::shared_ptr<Type> return_type, std::shared_ptr<Formals> formals,
                        std::shared_ptr<Statements> body)
             : Node(), id(std::move(id)), return_type(std::move(return_type)), formals(std::move(formals)),
-              body(std::move(body)) { }
+              body(std::move(body)) { 
+                
+              }
 
     Funcs::Funcs(std::shared_ptr<FuncDecl> func) : Node(), funcs({std::move(func)}) {}
 

@@ -3,11 +3,13 @@
 
 #include "scope.hpp"
 #include "nodes.hpp"
+#include "output.hpp"
 using namespace ast;
 #include <memory>
 #include <unordered_map>
 #include <string>
 #include <stack>
+using namespace output;
 
 class SymbolTable {
 private:
@@ -18,9 +20,8 @@ public:
     SymbolTable() {
         globalScope = new Scope(nullptr);
         scopeStack.push(globalScope);
-
-        globalScope->addFunctionSymbol("print", BuiltInType::VOID, {BuiltInType::STRING}, {"str"}, -1);
-        globalScope->addFunctionSymbol("printi", BuiltInType::VOID, {BuiltInType::INT}, {"num"}, -1);
+        // globalScope->addFunctionSymbol("print", BuiltInType::VOID, {BuiltInType::STRING}, {"str"}, -1);
+        // globalScope->addFunctionSymbol("printi", BuiltInType::VOID, {BuiltInType::INT}, {"num"}, -1);
     }
 
     ~SymbolTable() {

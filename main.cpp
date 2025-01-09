@@ -4,6 +4,7 @@
 #include "scope.hpp"
 #include "symbolTable.hpp"
 #include "semanticAnalyzer.hpp"
+using namespace output;
 
 // Extern from the bison-generated parser
 extern int yyparse();
@@ -15,6 +16,8 @@ int main() {
     yyparse();
 
     // Print the AST using the PrintVisitor
-    output::PrintVisitor printVisitor;
-    program->accept(printVisitor);
+    SemanticAnalyzer analyzer;
+    program->accept(analyzer);
+
+    analyzer.printResults();
 }

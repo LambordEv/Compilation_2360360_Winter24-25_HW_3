@@ -1,6 +1,5 @@
-#line 1 "scanner.cpp"
 
-#line 3 "scanner.cpp"
+#line 2 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -578,7 +577,7 @@ char *yytext;
 #include <stdio.h>
 #include <iostream>
 #include "output.hpp"
-#include "parser.hpp"
+#include "parser.tab.h"
 
 
 /*------- Function Declarion Section -------*/
@@ -593,9 +592,9 @@ void accumalateStringLexema(void);
 static char accumalatedString[2096] = {0};
 static char accumalatedStrLen = 0;
 
-#line 596 "scanner.cpp"
+#line 595 "lex.yy.c"
 
-#line 598 "scanner.cpp"
+#line 597 "lex.yy.c"
 
 #define INITIAL 0
 #define STRING_LEXEMA 1
@@ -816,7 +815,7 @@ YY_DECL
 	{
 #line 71 "scanner.lex"
 
-#line 819 "scanner.cpp"
+#line 818 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1093,7 +1092,7 @@ YY_RULE_SETUP
 #line 126 "scanner.lex"
 ECHO;
 	YY_BREAK
-#line 1096 "scanner.cpp"
+#line 1095 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 

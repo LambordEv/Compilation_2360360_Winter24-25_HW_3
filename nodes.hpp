@@ -38,6 +38,17 @@ namespace ast {
         STRING
     };
 
+    static bool checkTypesForRelOp(BuiltInType left, BuiltInType right) {
+        printf("left: %d, right: %d\n", left, right);
+        if ((left == BuiltInType::BYTE && right == BuiltInType::BYTE) ||
+            (left == BuiltInType::INT && right == BuiltInType::INT) ||
+            (left == BuiltInType::BYTE && right == BuiltInType::INT) ||
+            (left == BuiltInType::INT && right == BuiltInType::BYTE)) {
+            return true;
+        }
+        return false;
+}
+
     /* Base class for all AST nodes */
     class Node {
     public:
@@ -185,10 +196,7 @@ namespace ast {
         std::shared_ptr<Exp> getRight() const { return right; }
         RelOpType getOp() const { return op; }
         BuiltInType getType() const override { 
-            if ((left->getType() == BuiltInType::BYTE && right->getType() == BuiltInType::BYTE) ||
-                (left->getType() == BuiltInType::INT && right->getType() == BuiltInType::INT) ||
-                (left->getType() == BuiltInType::BYTE && right->getType() == BuiltInType::INT) ||
-                (left->getType() == BuiltInType::INT && right->getType() == BuiltInType::BYTE)) {
+            if (checkTypesForRelOp(std::dynamic_pointer_cast<ast::Type>(left)->getType(), std::dynamic_pointer_cast<ast::Type>(right)->getType())) {
                 return BuiltInType::BOOL;
             }
             return BuiltInType::TYPE_ERROR; 
@@ -501,7 +509,9 @@ namespace ast {
         Formal(std::shared_ptr<ID> id, std::shared_ptr<Type> type);
 
         std::string getFormalId() const { return id->getValue(); }
-        BuiltInType getFormalType() const { return type->getTypeOfType(); }
+        BuiltInType getFormalType() const { 
+            printf("My type is %d\n", type->getTypeOfType()); 
+            return type->getTypeOfType(); }
 
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
@@ -599,6 +609,12 @@ namespace ast {
 
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
+            // This is the root of the program, here is the global scope
+            // Add to Visitor.SymbolTable.GlobalScope the function name and its return type
+
+
+            // Continue with the visit - visit the function parameters and the function body, which are the inner scopes
+            
         }
     };
 }
