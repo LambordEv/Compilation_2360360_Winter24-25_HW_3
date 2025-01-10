@@ -1470,9 +1470,9 @@ yyreduce:
 #line 186 "parser.y"
             { 
                 BinOpType binOp = whatBinOpRecieved(yyvsp[-1]->text);
-                shared_ptr<Exp> left_exp = dynamic_pointer_cast<Exp>(yyvsp[-2]);;
-                shared_ptr<Exp> right_exp = dynamic_pointer_cast<Exp>(yyvsp[0]);;
-
+                shared_ptr<Exp> left_exp = dynamic_pointer_cast<Exp>(yyvsp[-2]);
+                shared_ptr<Exp> right_exp = dynamic_pointer_cast<Exp>(yyvsp[0]);
+                
                 yyval = make_shared<BinOp>(binOp, left_exp, right_exp);
             }
 #line 1479 "parser.tab.c"
@@ -1482,8 +1482,8 @@ yyreduce:
 #line 194 "parser.y"
             { 
                 BinOpType binOp = whatBinOpRecieved(yyvsp[-1]->text);
-                shared_ptr<Exp> left_exp = dynamic_pointer_cast<Exp>(yyvsp[-2]);;
-                shared_ptr<Exp> right_exp = dynamic_pointer_cast<Exp>(yyvsp[0]);;
+                shared_ptr<Exp> left_exp = dynamic_pointer_cast<Exp>(yyvsp[-2]);
+                shared_ptr<Exp> right_exp = dynamic_pointer_cast<Exp>(yyvsp[0]);
 
                 yyval = make_shared<BinOp>(binOp, left_exp, right_exp);
             }

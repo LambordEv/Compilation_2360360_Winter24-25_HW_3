@@ -317,14 +317,6 @@ namespace ast {
 
         std::vector<std::shared_ptr<Exp>> getExpressions() const { return exps; }
 
-        // std::vector<BuiltInType> getExpListType() const {
-            // std::vector<BuiltInType> types;
-            // for(auto& exp : exps) {
-            //     types.push_back(exp->getType());
-            // }
-            // return types;
-        // }
-
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -346,7 +338,9 @@ namespace ast {
 
         std::string getFuncId() const { return func_id->getValueStr(); }
 
-        std::shared_ptr<ExpList> getArgs() const { return args; }
+        std::shared_ptr<ExpList> getArgsExp() const { return args; }
+
+        std::vector<std::shared_ptr<Exp>> getArgs() const { return args->getExpressions(); }
 
         void accept(Visitor &visitor) override {
             visitor.visit(*this);

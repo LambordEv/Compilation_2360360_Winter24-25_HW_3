@@ -51,21 +51,24 @@ public:
         globalScope->addFunctionSymbol(name, returnType, paramTypes, paramNames, lineno);
         beginScope();
         for (size_t i = 0; i < paramNames.size(); ++i) {
-            getCurrentScope()->addParameterSymbol(paramNames[i], paramTypes[i], lineno);
+            char paramName[2096] = {0};                     /// TODO - Not appropriate
+            sscanf(paramName, "%s-Param%d\0", name, i);     /// TODO - Not appropriate
+            getCurrentScope()->addParameterSymbol(paramName, paramTypes[i], lineno);
         }
     }
 
     Symbol* getSymbol(const std::string &name, int lineno) {
-        Symbol* symbol = getCurrentScope()->getSymbol(name);
-        if (symbol == nullptr) {
-            printf("error in symbolTable\n");
-            errorUndef(lineno, name);
-        }
+        // printf("Get Symbol in %s\n", "get_Symbol symbolTable");
+        Symbol* symbol = getCurrentScope()->getSymbolName(name);
+        // if (symbol == nullptr) {
+        //     printf("Undefined Variable in %s\n", "getSymbol in symbolTable");
+        //     errorUndef(lineno, name);
+        // }
         return symbol;
     }
 
-    void beginScope() {
-        Scope* newScope = new Scope(scopeStack.top());
+    void beginScope(bool isLoopScope = false, std::string scopeName = "") {
+        Scope* newScope = new Scope(scopeStack.top(), isLoopScope);
         scopeStack.push(newScope);
     }
 

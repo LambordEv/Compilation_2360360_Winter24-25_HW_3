@@ -6,7 +6,7 @@
 #include "nodes.hpp"
 using namespace ast;
 
-enum class SymbolType {
+enum SymbolType {
     VARIABLE,
     FUNCTION
 };
@@ -51,6 +51,7 @@ public:
     const std::string& getName() const { return name; }
     SymbolType getSymbolType() const { return symbolType; }
     BuiltInType getDataType() const { return dataType; }
+    void setDataType(BuiltInType newSymbolType) { dataType = newSymbolType; }
     int getOffset() const { return offset; }
     const std::vector<BuiltInType>& getParameterTypes() const { return parameterTypes; }
     const std::vector<std::string>& getParameterNames() const { return parameterNames; }
