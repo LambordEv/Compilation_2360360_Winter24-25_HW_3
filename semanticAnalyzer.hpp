@@ -36,9 +36,7 @@ public:
     }
 
     // Implementations of visit methods
-    void visit(ast::Num& node) override { 
-        // Not Needed ?
-    }
+    void visit(ast::Num& node) override { }
 
     void visit(ast::NumB& node) override {
         if (node.getValueInt() > 255) {
@@ -46,13 +44,9 @@ public:
         }
     }
 
-    void visit(ast::String& node) override {
-        // Not Needed ?
-    }
+    void visit(ast::String& node) override {}
 
-    void visit(ast::Bool& node) override {
-        // Not Needed ?
-    }
+    void visit(ast::Bool& node) override {}
 
     void visit(ast::ID& node) override {
         Symbol* var = symbolTable.getSymbol(node.getValueStr(), node.getLine());
@@ -90,20 +84,19 @@ public:
             rightBuiltInType = BuiltInType::BYTE;
         }
 
-        if (TYPE_ERROR == leftBuiltInType || TYPE_ERROR == rightBuiltInType) {
-            node.resultType = TYPE_ERROR;
-            printf("Node error, node type is not apropriate - %d --- %d\n", leftBuiltInType, rightBuiltInType);
-            errorMismatch(node.getLine());
-        } else if(BYTE == leftBuiltInType && BYTE == rightBuiltInType){
-            node.resultType = BYTE;
-            node.setType(NODE_NumB);
-        } else {
-            node.resultType = INT;
-            node.setType(NODE_Num);
-        }
+        // BuiltInType binopType = BuiltInType::TYPE_ERROR;
+        // if ((node.getLeft()->getType() == BuiltInType::BYTE && node.getRight()->getType() == BuiltInType::BYTE)) {
+        //         binopType = BuiltInType::BYTE;
+        // }
+        // else if (((node.getLeft()->getType() == BuiltInType::INT && node.getRight()->getType() == BuiltInType::INT) ||
+        //         (node.getLeft()->getType() == BuiltInType::BYTE && node.getRight()->getType() == BuiltInType::INT) ||
+        //         (node.getLeft()->getType() == BuiltInType::INT && node.getRight()->getType() == BuiltInType::BYTE))) {
+        //         binopType = BuiltInType::INT;
+        // }
+        // node.setType(binopType);
 
-        if (node.getType() != NODE_Num && node.getType() != NODE_NumB) {
-            printf("Node error, node type is not apropriate - %d\n", node.getType());
+        if (node.getType() == NODE_Undecided) {
+            printf("Node error, not decided node\n");
             // errorMismatch(node.getLine());
         }
     }
@@ -112,40 +105,13 @@ public:
         node.getLeft()->accept(*this);
         node.getRight()->accept(*this);
 
-        BuiltInType leftBuiltInType = BuiltInType::TYPE_ERROR;
-        BuiltInType rightBuiltInType = BuiltInType::TYPE_ERROR;
+        std::cout << "Type of left --- " << typeid(*node.getLeft()).name() << std::endl;
+        std::cout << "Type of right --- " << typeid(*node.getRight()).name() << std::endl;
 
-        if (node.getLeft()->getType() == NODE_ID) {
-            Symbol* left = symbolTable.getSymbol(node.getLeft()->getValueStr(), node.getLeft()->getLine());
-            leftBuiltInType = left->getDataType();
-        }
-        else if (node.getLeft()->getType() == NODE_Num) {
-            leftBuiltInType = BuiltInType::INT;
-        }
-        else if (node.getLeft()->getType() == NODE_NumB) {
-            leftBuiltInType = BuiltInType::BYTE;
-        }
+        // BuiltInType leftType = BuiltInType::TYPE_ERROR == node.getLeft()->getType() ? symbolTable.getSymbol()        
 
-        if (node.getRight()->getType() == NODE_ID) {
-            Symbol* right = symbolTable.getSymbol(node.getRight()->getValueStr(), node.getRight()->getLine());
-            rightBuiltInType = right->getDataType();
-        }
-        else if (node.getRight()->getType() == NODE_Num) {
-            rightBuiltInType = BuiltInType::INT;
-        }
-        else if (node.getRight()->getType() == NODE_NumB) {
-            rightBuiltInType = BuiltInType::BYTE;
-        }
-
-        if (leftBuiltInType == TYPE_ERROR || leftBuiltInType == TYPE_ERROR){
-            printf("Node error, node type is not apropriate - %d\n", node.getType());
-            errorMismatch(node.getLine());
-        } else {
-            node.setType(NODE_Bool);
-        }
-
-        if (node.getType() != NODE_Bool) {
-            printf("Node error, node type is not apropriate - %d\n", node.getType());
+        if (node.getType() == NODE_Undecided) {
+            printf("Node error, not decided node\n");
             // errorMismatch(node.getLine());
         }
     }
@@ -153,69 +119,49 @@ public:
     void visit(ast::Not& node) override {
         node.getExpr()->accept(*this);
         
-        if (node.getType() == NODE_Bool){
-            node.setType(NODE_Bool);
-        } else {
-            errorMismatch(node.getLine());
-        }
+        // BuiltInType binopType = BuiltInType::TYPE_ERROR;
+        // binopType = node.getExpr()->getType() == BuiltInType::BOOL ? BuiltInType::BOOL : BuiltInType::TYPE_ERROR;
+
+        // if (node.getType() == BuiltInType::TYPE_ERROR) {
+        //     errorMismatch(node.getLine());
+        // }
     }
 
     void visit(ast::And& node) override {
         node.getLeft()->accept(*this);
         node.getRight()->accept(*this);
 
-        if (node.getLeft()->getType() == NODE_Bool && node.getRight()->getType() == NODE_Bool) {
-            node.setType(NODE_Bool);
-        } else {
-            errorMismatch(node.getLine());
-        }
+        // BuiltInType binopType = BuiltInType::TYPE_ERROR;
+        // if (node.getLeft()->getType() == BuiltInType::BOOL && node.getRight()->getType() == BuiltInType::BOOL) {
+        //     binopType = BuiltInType::BOOL;
+        // }
+
+        // if (node.getType() == BuiltInType::TYPE_ERROR) {
+        //     errorMismatch(node.getLine());
+        // }
     }
 
     void visit(ast::Or& node) override {
         node.getLeft()->accept(*this);
         node.getRight()->accept(*this);
 
-        if (node.getLeft()->getType() == NODE_Bool && node.getRight()->getType() == NODE_Bool) {
-            node.setType(NODE_Bool);
-        } else {
-            errorMismatch(node.getLine());
-        }
+        // BuiltInType binopType = BuiltInType::TYPE_ERROR;
+        // if (node.getLeft()->getType() == BuiltInType::BOOL && node.getRight()->getType() == BuiltInType::BOOL) {
+        //     binopType = BuiltInType::BOOL;
+        // }
+
+        // if (node.getType() == BuiltInType::TYPE_ERROR) {
+        //     errorMismatch(node.getLine());
+        // }
     }
 
-    void visit(ast::Type& node) override {
-        // Not Needed ?
-    }
+    void visit(ast::Type& node) override {}
 
     void visit(ast::Cast& node) override {
         node.getExpr()->accept(*this);
 
-        Symbol* expSymbol = nullptr;
-        BuiltInType originalType = TYPE_ERROR;
-        BuiltInType targetType = TYPE_ERROR;
-        if (node.getExpr()->getType() == NODE_ID) {
-            expSymbol = symbolTable.getSymbol(node.getExpr()->getValueStr(), node.getExpr()->getLine());
-            if(!expSymbol) {
-                cout << "In Visit Cast symbol returned as nullptr, WTF?!" << endl;
-            }
-            originalType = expSymbol->getDataType();
-        }
+        // ??? check + errors ???
 
-        if (node.getTargetType() == INT
-            && (originalType == INT || originalType == BYTE)) {
-            targetType = INT;
-            node.getExpr()->setType(NODE_Num);
-        } else if (node.getTargetType() == BYTE
-            && (originalType == BYTE || originalType == INT)) {
-            targetType = BYTE;
-            node.getExpr()->setType(NODE_NumB);
-        } else {
-            errorMismatch(node.getExpr()->getLine());
-        }
-
-        //Update the type of the symbol in the symbolTable
-        if (nullptr != expSymbol) {
-            expSymbol->setDataType(targetType);
-        }
     }
 
     void visit(ast::ExpList& node) override {
@@ -225,7 +171,6 @@ public:
     }
 
     void visit(ast::Call& node) override {
-        // printf("Get Symbol in %s\n", "Visit Call");
         Symbol* func = symbolTable.getSymbol(node.getFuncId(), node.getLine());
         if (!func) {
             errorUndefFunc(node.getLine(), node.getFuncId());
@@ -274,43 +219,35 @@ public:
     }
 
     void visit(ast::If& node) override {
-        beginScope();
-        beginScope();
         node.getCondition()->accept(*this);
         node.getThen()->accept(*this);
-        endScope();
-        endScope();
         if (node.getElse()) {
-            beginScope();
             node.getElse()->accept(*this);
-            endScope();
         }
+
+        // if (node.getCondition()->getType() != BuiltInType::BOOL) {
+        //     errorMismatch(node.getLine());
+        // }
     }
 
     void visit(ast::While& node) override {
-        beginScope();
-        beginScope();
         node.getCondition()->accept(*this);
         node.getBody()->accept(*this);
 
         // if (node.getCondition()->getType() != BuiltInType::BOOL) {
         //     errorMismatch(node.getLine());
         // }
-        endScope();
-        endScope();
     }
 
     void visit(ast::VarDecl& node) override {
-        // printf("Get Symbol in %s\n", "Visit VarDecl 1");
         if (symbolTable.getSymbol(node.getValueStr(), node.getLine())) {
             errorDef(node.getLine(), node.getValueStr());
         }
 
-        // printf("Current var ID is %s --- Its type is %d -- Var text is %s\n", node.getValueStr().c_str(), node.getVarType(), node.getText().c_str());
+        printf("Current var ID is %s --- Its type is %d -- Var text is %s\n", node.getValueStr().c_str(), node.getVarType(), node.getText().c_str());
         
         symbolTable.addVariableSymbol(node.getValueStr(), node.getVarType(), node.getLine());
-        //symbolTable.printSymbolTable();
-        // printf("Get Symbol in %s\n", "Visit VarDecl 2");
+        symbolTable.printSymbolTable();
         Symbol* symbol = symbolTable.getSymbol(node.getValueStr(), node.getLine());
         printer.emitVar(node.getValueStr(), symbol->getDataType(), symbol->getOffset());
 
@@ -321,22 +258,20 @@ public:
     }
 
     void visit(ast::Assign& node) override {
-        // printf("Get Symbol in %s\n", "Visit Assign");
         Symbol* var = symbolTable.getSymbol(node.getValueStr(), node.getLine());
         if (!var) {
+            printf("Error in assign\n");
             errorUndef(node.getLine(), node.getValueStr());
         }
         node.getAssignExp()->accept(*this);
     }
 
     void visit(ast::Formal& node) override {
-        // printf("Get Symbol in %s\n", "Visit Formal 1");
         if (symbolTable.getSymbol(node.getFormalId(), node.getLine())) {
             errorDef(node.getLine(), node.getFormalId());
         }
 
         symbolTable.addParameterSymbol(node.getFormalId(), node.getFormalType(), node.getLine());
-        // printf("Get Symbol in %s\n", "Visit Formal 3");
         Symbol* symbol = symbolTable.getSymbol(node.getFormalId(), node.getLine());
         printer.emitVar(node.getFormalId(), node.getFormalType(), symbol->getOffset());
     }
@@ -364,8 +299,6 @@ public:
         // The (this) is the ScopePrinter
         this->symbolTable.addFunctionSymbol("print", BuiltInType::VOID, {BuiltInType::STRING}, {"str"}, -1);
         this->symbolTable.addFunctionSymbol("printi", BuiltInType::VOID, {BuiltInType::INT}, {"num"}, -1);
-        printer.emitFunc("print", BuiltInType::VOID, {BuiltInType::STRING});
-        printer.emitFunc("printi", BuiltInType::VOID, {BuiltInType::INT});
 
         for (auto& funcDecl : node.getFuncs()) {
             this->symbolTable.addFunctionSymbol(funcDecl->getFuncId(), funcDecl->getFuncReturnType(), funcDecl->getFuncParams()->getFormalsType(), 
