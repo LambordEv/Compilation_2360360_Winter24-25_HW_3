@@ -9,6 +9,9 @@
 #include <vector>
 #include <iostream>
 
+
+using namespace ast;
+
 class SemanticAnalyzer : public Visitor {
 private:
     // SymbolTable* symbolTable; 
@@ -33,7 +36,7 @@ public:
     }
 
     // Implementations of visit methods
-    void visit(ast::Num& node) override {}
+    void visit(ast::Num& node) override { }
 
     void visit(ast::NumB& node) override {
         if (node.getValue() > 255) {
@@ -56,8 +59,21 @@ public:
         node.getLeft()->accept(*this);
         node.getRight()->accept(*this);
 
-        if (node.getType() == BuiltInType::TYPE_ERROR) {
-            errorMismatch(node.getLine());
+        
+        // BuiltInType binopType = BuiltInType::TYPE_ERROR;
+        // if ((node.getLeft()->getType() == BuiltInType::BYTE && node.getRight()->getType() == BuiltInType::BYTE)) {
+        //         binopType = BuiltInType::BYTE;
+        // }
+        // else if (((node.getLeft()->getType() == BuiltInType::INT && node.getRight()->getType() == BuiltInType::INT) ||
+        //         (node.getLeft()->getType() == BuiltInType::BYTE && node.getRight()->getType() == BuiltInType::INT) ||
+        //         (node.getLeft()->getType() == BuiltInType::INT && node.getRight()->getType() == BuiltInType::BYTE))) {
+        //         binopType = BuiltInType::INT;
+        // }
+        // node.setType(binopType);
+
+        if (node.getType() == NODE_Undecided) {
+            printf("Node error, not decided node\n");
+            // errorMismatch(node.getLine());
         }
     }
 
@@ -65,34 +81,54 @@ public:
         node.getLeft()->accept(*this);
         node.getRight()->accept(*this);
 
-        if (node.getType() == BuiltInType::TYPE_ERROR) {
-            errorMismatch(node.getLine());
+        std::cout << "Type of left --- " << typeid(*node.getLeft()).name() << std::endl;
+        std::cout << "Type of right --- " << typeid(*node.getRight()).name() << std::endl;
+
+        // BuiltInType leftType = BuiltInType::TYPE_ERROR == node.getLeft()->getType() ? symbolTable.getSymbol()        
+
+        if (node.getType() == NODE_Undecided) {
+            printf("Node error, not decided node\n");
+            // errorMismatch(node.getLine());
         }
     }
 
     void visit(ast::Not& node) override {
         node.getExpr()->accept(*this);
-        if (node.getType() == BuiltInType::TYPE_ERROR) {
-            errorMismatch(node.getLine());
-        }
+        
+        // BuiltInType binopType = BuiltInType::TYPE_ERROR;
+        // binopType = node.getExpr()->getType() == BuiltInType::BOOL ? BuiltInType::BOOL : BuiltInType::TYPE_ERROR;
+
+        // if (node.getType() == BuiltInType::TYPE_ERROR) {
+        //     errorMismatch(node.getLine());
+        // }
     }
 
     void visit(ast::And& node) override {
         node.getLeft()->accept(*this);
         node.getRight()->accept(*this);
 
-        if (node.getType() == BuiltInType::TYPE_ERROR) {
-            errorMismatch(node.getLine());
-        }
+        // BuiltInType binopType = BuiltInType::TYPE_ERROR;
+        // if (node.getLeft()->getType() == BuiltInType::BOOL && node.getRight()->getType() == BuiltInType::BOOL) {
+        //     binopType = BuiltInType::BOOL;
+        // }
+
+        // if (node.getType() == BuiltInType::TYPE_ERROR) {
+        //     errorMismatch(node.getLine());
+        // }
     }
 
     void visit(ast::Or& node) override {
         node.getLeft()->accept(*this);
         node.getRight()->accept(*this);
 
-        if (node.getType() == BuiltInType::TYPE_ERROR) {
-            errorMismatch(node.getLine());
-        }
+        // BuiltInType binopType = BuiltInType::TYPE_ERROR;
+        // if (node.getLeft()->getType() == BuiltInType::BOOL && node.getRight()->getType() == BuiltInType::BOOL) {
+        //     binopType = BuiltInType::BOOL;
+        // }
+
+        // if (node.getType() == BuiltInType::TYPE_ERROR) {
+        //     errorMismatch(node.getLine());
+        // }
     }
 
     void visit(ast::Type& node) override {}
@@ -165,18 +201,18 @@ public:
             node.getElse()->accept(*this);
         }
 
-        if (node.getCondition()->getType() != BuiltInType::BOOL) {
-            errorMismatch(node.getLine());
-        }
+        // if (node.getCondition()->getType() != BuiltInType::BOOL) {
+        //     errorMismatch(node.getLine());
+        // }
     }
 
     void visit(ast::While& node) override {
         node.getCondition()->accept(*this);
         node.getBody()->accept(*this);
 
-        if (node.getCondition()->getType() != BuiltInType::BOOL) {
-            errorMismatch(node.getLine());
-        }
+        // if (node.getCondition()->getType() != BuiltInType::BOOL) {
+        //     errorMismatch(node.getLine());
+        // }
     }
 
     void visit(ast::VarDecl& node) override {
@@ -184,6 +220,8 @@ public:
             errorDef(node.getLine(), node.getVarId());
         }
 
+        printf("Current var ID is %s --- Its type is %d -- Var text is %s\n", node.getVarId().c_str(), node.getVarType(), node.getText().c_str());
+        
         symbolTable.addVariableSymbol(node.getVarId(), node.getVarType(), node.getLine());
         printer.emitVar(node.getVarId(), node.getVarType(), symbolTable.getSymbol(node.getVarId())->getOffset());
         node.getVarInitExp()->accept(*this);

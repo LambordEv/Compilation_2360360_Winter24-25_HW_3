@@ -185,16 +185,16 @@ Exp:    T_LPAREN Exp T_RPAREN { $$ = $2; }
             | Exp T_MUL_DIV Exp
             { 
                 BinOpType binOp = whatBinOpRecieved($2->text);
-                shared_ptr<Exp> left_exp = dynamic_pointer_cast<Exp>($1);;
-                shared_ptr<Exp> right_exp = dynamic_pointer_cast<Exp>($3);;
-
+                shared_ptr<Exp> left_exp = dynamic_pointer_cast<Exp>($1);
+                shared_ptr<Exp> right_exp = dynamic_pointer_cast<Exp>($3);
+                
                 $$ = make_shared<BinOp>(binOp, left_exp, right_exp);
             }
             | Exp T_ADD_SUB Exp
             { 
                 BinOpType binOp = whatBinOpRecieved($2->text);
-                shared_ptr<Exp> left_exp = dynamic_pointer_cast<Exp>($1);;
-                shared_ptr<Exp> right_exp = dynamic_pointer_cast<Exp>($3);;
+                shared_ptr<Exp> left_exp = dynamic_pointer_cast<Exp>($1);
+                shared_ptr<Exp> right_exp = dynamic_pointer_cast<Exp>($3);
 
                 $$ = make_shared<BinOp>(binOp, left_exp, right_exp);
             }

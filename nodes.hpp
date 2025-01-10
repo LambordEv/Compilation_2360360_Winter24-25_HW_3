@@ -8,6 +8,38 @@
 
 namespace ast {
 
+    enum SemanticNodeType {
+        NODE_Undecided = -1,
+        NODE_Exp,
+        NODE_Statement,
+        NODE_Num,
+        NODE_NumB,
+        NODE_String,
+        NODE_Bool,
+        NODE_ID,
+        NODE_BinOP,
+        NODE_RelOP,
+        NODE_Not,
+        NODE_And,
+        NODE_Or,
+        NODE_Type,
+        NODE_Cast,
+        NODE_ExpList,
+        NODE_Call,
+        NODE_Statements,
+        NODE_Break,
+        NODE_Continue,
+        NODE_Return,
+        NODE_If,
+        NODE_While,
+        NODE_VarDecl,
+        NODE_Assign,
+        NODE_Formal,
+        NODE_Formals,
+        NODE_FuncDecl,
+        NODE_Funcs
+    };
+
     /* Arithmetic operations */
     enum BinOpType {
         BIN_ERROR = -1,
@@ -38,19 +70,10 @@ namespace ast {
         STRING
     };
 
-    static bool checkTypesForRelOp(BuiltInType left, BuiltInType right) {
-        printf("left: %d, right: %d\n", left, right);
-        if ((left == BuiltInType::BYTE && right == BuiltInType::BYTE) ||
-            (left == BuiltInType::INT && right == BuiltInType::INT) ||
-            (left == BuiltInType::BYTE && right == BuiltInType::INT) ||
-            (left == BuiltInType::INT && right == BuiltInType::BYTE)) {
-            return true;
-        }
-        return false;
-}
-
     /* Base class for all AST nodes */
     class Node {
+    protected:
+        SemanticNodeType nodeType = NODE_Undecided;
     public:
         // Line number in the source code
         int line;
@@ -59,8 +82,9 @@ namespace ast {
         // Use this constructor only while parsing in bison or flex
         Node();
         int getLine() const { return line; }
-        //virtual std::string getValue() const { return text; }
-        virtual BuiltInType getType() const { return BuiltInType::TYPE_ERROR; }
+        std::string getText() const { return text; }
+        SemanticNodeType getType() const { return nodeType; }
+        virtual void setType(SemanticNodeType newType) { this->nodeType = newType; }
         // Accept method for visitor pattern
         virtual void accept(Visitor &visitor) = 0;
     };
@@ -72,7 +96,8 @@ namespace ast {
     };
 
     /* Base class for all statements */
-    class Statement : virtual public Node {
+    class Statement : virtual public Node { 
+
     };
 
     /* Number literal */
@@ -84,7 +109,6 @@ namespace ast {
         // Constructor that receives a C-style string that represents the number
         explicit Num(std::string str);
         int getValue() const { return value; }
-        BuiltInType getType() const override { return BuiltInType::INT; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -99,7 +123,6 @@ namespace ast {
         // Constructor that receives a C-style (including b character) string that represents the number
         explicit NumB(std::string str);
         int getValue() const { return value; }
-        BuiltInType getType() const override { return BuiltInType::BYTE; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -114,7 +137,6 @@ namespace ast {
         // Constructor that receives a C-style string that represents the string *including quotes*
         explicit String(std::string str);
         std::string getValue() const { return value; }
-        BuiltInType getType() const override { return BuiltInType::STRING; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -129,7 +151,6 @@ namespace ast {
         // Constructor that receives the boolean value
         explicit Bool(bool value);
         bool getValue() const { return value; }
-        BuiltInType getType() const override { return BuiltInType::BOOL; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -158,23 +179,13 @@ namespace ast {
         std::shared_ptr<Exp> right;
         // Operation
         BinOpType op;
+        BuiltInType resultType = TYPE_ERROR;
 
         // Constructor that receives the left and right operands and the operation
         BinOp(BinOpType op, std::shared_ptr<Exp> left = nullptr, std::shared_ptr<Exp> right = nullptr);
         std::shared_ptr<Exp> getLeft() const { return left; }
         std::shared_ptr<Exp> getRight() const { return right; }
         BinOpType getOp() const { return op; }
-        BuiltInType getType() const override { 
-            if (left->getType() == BuiltInType::BYTE && right->getType() == BuiltInType::BYTE) {
-                return BuiltInType::BYTE;
-            }
-            else if ((left->getType() == BuiltInType::INT && right->getType() == BuiltInType::INT) ||
-                (left->getType() == BuiltInType::BYTE && right->getType() == BuiltInType::INT) ||
-                (left->getType() == BuiltInType::INT && right->getType() == BuiltInType::BYTE)) {
-                return BuiltInType::INT;
-            }
-            return BuiltInType::TYPE_ERROR; 
-        }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -189,18 +200,13 @@ namespace ast {
         std::shared_ptr<Exp> right;
         // Operation
         RelOpType op;
+        BuiltInType resultType = TYPE_ERROR;
 
         // Constructor that receives the left and right operands and the operation
         RelOp(RelOpType op, std::shared_ptr<Exp> left = nullptr, std::shared_ptr<Exp> right = nullptr);
         std::shared_ptr<Exp> getLeft() const { return left; }
         std::shared_ptr<Exp> getRight() const { return right; }
         RelOpType getOp() const { return op; }
-        BuiltInType getType() const override { 
-            if (checkTypesForRelOp(std::dynamic_pointer_cast<ast::Type>(left)->getType(), std::dynamic_pointer_cast<ast::Type>(right)->getType())) {
-                return BuiltInType::BOOL;
-            }
-            return BuiltInType::TYPE_ERROR; 
-        }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -211,16 +217,11 @@ namespace ast {
     public:
         // Operand
         std::shared_ptr<Exp> exp;
+        BuiltInType resultType = TYPE_ERROR;
 
         // Constructor that receives the operand
         explicit Not(std::shared_ptr<Exp> exp);
         std::shared_ptr<Exp> getExpr() const { return exp; }
-        BuiltInType getType() const override { 
-            if (exp->getType() == BuiltInType::BOOL) {
-                return BuiltInType::BOOL;
-            }
-            return BuiltInType::TYPE_ERROR; 
-        }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -233,17 +234,12 @@ namespace ast {
         std::shared_ptr<Exp> left;
         // Right operand
         std::shared_ptr<Exp> right;
+        BuiltInType resultType = TYPE_ERROR;
 
         // Constructor that receives the left and right operands
         And(std::shared_ptr<Exp> left, std::shared_ptr<Exp> right);
         std::shared_ptr<Exp> getLeft() const { return left; }
         std::shared_ptr<Exp> getRight() const { return right; }
-        BuiltInType getType() const override { 
-            if (left->getType() == BuiltInType::BOOL && right->getType() == BuiltInType::BOOL) {
-                return BuiltInType::BOOL;
-            }
-            return BuiltInType::TYPE_ERROR; 
-        }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -256,17 +252,12 @@ namespace ast {
         std::shared_ptr<Exp> left;
         // Right operand
         std::shared_ptr<Exp> right;
+        BuiltInType resultType = TYPE_ERROR;
 
         // Constructor that receives the left and right operands
         Or(std::shared_ptr<Exp> left, std::shared_ptr<Exp> right);
         std::shared_ptr<Exp> getLeft() const { return left; }
         std::shared_ptr<Exp> getRight() const { return right; }
-        BuiltInType getType() const override { 
-            if (left->getType() == BuiltInType::BOOL && right->getType() == BuiltInType::BOOL) {
-                return BuiltInType::BOOL;
-            }
-            return BuiltInType::TYPE_ERROR; 
-        }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -323,13 +314,13 @@ namespace ast {
 
         std::vector<std::shared_ptr<Exp>> getExpressions() const { return exps; }
 
-        std::vector<BuiltInType> getExpListType() const {
-            std::vector<BuiltInType> types;
-            for(auto& exp : exps) {
-                types.push_back(exp->getType());
-            }
-            return types;
-        }
+        // std::vector<BuiltInType> getExpListType() const {
+            // std::vector<BuiltInType> types;
+            // for(auto& exp : exps) {
+            //     types.push_back(exp->getType());
+            // }
+            // return types;
+        // }
 
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
@@ -510,7 +501,6 @@ namespace ast {
 
         std::string getFormalId() const { return id->getValue(); }
         BuiltInType getFormalType() const { 
-            printf("My type is %d\n", type->getTypeOfType()); 
             return type->getTypeOfType(); }
 
         void accept(Visitor &visitor) override {
