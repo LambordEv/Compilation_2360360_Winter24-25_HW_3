@@ -52,18 +52,16 @@ void printSymbolTable(const std::unordered_map<std::string, Symbol>& symbolTable
 
 class Scope {
 private:
-    Scope* parent = nullptr;
+    Scope* parent;
     std::unordered_map<std::string, Symbol> symbolTable;
-    int nextOffset = 0;
-    int nextParamOffset = -1;
+    int nextOffset;
+    int nextParamOffset;
 
 public:
-    Scope(Scope* parent) : parent(parent) {
-        if(parent){
-            this->nextOffset = parent->getNextOffset();
-            // this->nextParamOffset = parent->getNextParamOffset();
-        }
-    }
+    Scope(Scope* parent)
+        : parent(parent),
+          nextOffset(0),
+          nextParamOffset(-1) {}
 
     void addVariableSymbol(const std::string& name, BuiltInType datatype, int lineno) {
         if (symbolTable.count(name) > 0) {
@@ -88,14 +86,13 @@ public:
         symbolTable[name] = Symbol(name, SymbolType::FUNCTION, returnType, paramTypes, paramNames);
     }
 
-    Symbol* getSymbolName(const std::string& name) {
+    Symbol* getSymbol(const std::string& name) {
         //printSymbolTable(symbolTable);
         auto it = symbolTable.find(name);
         if (it != symbolTable.end()) {
             return &it->second;
         }
-        // printf("Get Symbol in %s\n", "getSymbol in Scope");
-        return parent ? parent->getSymbolName(name) : nullptr;
+        return parent ? parent->getSymbol(name) : nullptr;
     }
 
     int getNextOffset() const {
