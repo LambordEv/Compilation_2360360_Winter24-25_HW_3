@@ -39,8 +39,8 @@ public:
     void visit(ast::Num& node) override { }
 
     void visit(ast::NumB& node) override {
-        if (node.getValue() > 255) {
-            errorByteTooLarge(node.getLine(), node.getValue());
+        if (node.getValueInt() > 255) {
+            errorByteTooLarge(node.getLine(), node.getValueInt());
         }
     }
 
@@ -49,9 +49,9 @@ public:
     void visit(ast::Bool& node) override {}
 
     void visit(ast::ID& node) override {
-        Symbol* var = symbolTable.getSymbol(node.getValue());
+        Symbol* var = symbolTable.getSymbol(node.getValueStr(), node.getLine());
         if (!var) {
-            errorUndef(node.getLine(), node.getValue());
+            errorUndef(node.getLine(), node.getValueStr());
         }
     }
 
@@ -59,7 +59,31 @@ public:
         node.getLeft()->accept(*this);
         node.getRight()->accept(*this);
 
-        
+        BuiltInType leftBuiltInType = BuiltInType::TYPE_ERROR;
+        BuiltInType rightBuiltInType = BuiltInType::TYPE_ERROR;
+
+        if (node.getLeft()->getType() == NODE_ID) {
+            Symbol* left = symbolTable.getSymbol(node.getLeft()->getValueStr(), node.getLeft()->getLine());
+            leftBuiltInType = left->getDataType();
+        }
+        else if (node.getLeft()->getType() == NODE_Num) {
+            leftBuiltInType = BuiltInType::INT;
+        }
+        else if (node.getLeft()->getType() == NODE_NumB) {
+            leftBuiltInType = BuiltInType::BYTE;
+        }
+
+        if (node.getRight()->getType() == NODE_ID) {
+            Symbol* right = symbolTable.getSymbol(node.getRight()->getValueStr(), node.getRight()->getLine());
+            rightBuiltInType = right->getDataType();
+        }
+        else if (node.getRight()->getType() == NODE_Num) {
+            rightBuiltInType = BuiltInType::INT;
+        }
+        else if (node.getRight()->getType() == NODE_NumB) {
+            rightBuiltInType = BuiltInType::BYTE;
+        }
+
         // BuiltInType binopType = BuiltInType::TYPE_ERROR;
         // if ((node.getLeft()->getType() == BuiltInType::BYTE && node.getRight()->getType() == BuiltInType::BYTE)) {
         //         binopType = BuiltInType::BYTE;
@@ -147,7 +171,7 @@ public:
     }
 
     void visit(ast::Call& node) override {
-        Symbol* func = symbolTable.getSymbol(node.getFuncId());
+        Symbol* func = symbolTable.getSymbol(node.getFuncId(), node.getLine());
         if (!func) {
             errorUndefFunc(node.getLine(), node.getFuncId());
         }
@@ -216,32 +240,40 @@ public:
     }
 
     void visit(ast::VarDecl& node) override {
-        if (symbolTable.getSymbol(node.getVarId())) {
-            errorDef(node.getLine(), node.getVarId());
+        if (symbolTable.getSymbol(node.getValueStr(), node.getLine())) {
+            errorDef(node.getLine(), node.getValueStr());
         }
 
-        printf("Current var ID is %s --- Its type is %d -- Var text is %s\n", node.getVarId().c_str(), node.getVarType(), node.getText().c_str());
+        printf("Current var ID is %s --- Its type is %d -- Var text is %s\n", node.getValueStr().c_str(), node.getVarType(), node.getText().c_str());
         
-        symbolTable.addVariableSymbol(node.getVarId(), node.getVarType(), node.getLine());
-        printer.emitVar(node.getVarId(), node.getVarType(), symbolTable.getSymbol(node.getVarId())->getOffset());
-        node.getVarInitExp()->accept(*this);
+        symbolTable.addVariableSymbol(node.getValueStr(), node.getVarType(), node.getLine());
+        symbolTable.printSymbolTable();
+        Symbol* symbol = symbolTable.getSymbol(node.getValueStr(), node.getLine());
+        printer.emitVar(node.getValueStr(), symbol->getDataType(), symbol->getOffset());
+
+        if (node.getVarInitExp()) {
+            node.getVarInitExp()->accept(*this);
+        }
+        node.getVarId()->accept(*this);
     }
 
     void visit(ast::Assign& node) override {
-        Symbol* var = symbolTable.getSymbol(node.getAssignId());
+        Symbol* var = symbolTable.getSymbol(node.getValueStr(), node.getLine());
         if (!var) {
-            errorUndef(node.getLine(), node.getAssignId());
+            printf("Error in assign\n");
+            errorUndef(node.getLine(), node.getValueStr());
         }
         node.getAssignExp()->accept(*this);
     }
 
     void visit(ast::Formal& node) override {
-        if (symbolTable.getSymbol(node.getFormalId())) {
+        if (symbolTable.getSymbol(node.getFormalId(), node.getLine())) {
             errorDef(node.getLine(), node.getFormalId());
         }
 
         symbolTable.addParameterSymbol(node.getFormalId(), node.getFormalType(), node.getLine());
-        printer.emitVar(node.getFormalId(), node.getFormalType(), symbolTable.getSymbol(node.getFormalId())->getOffset());
+        Symbol* symbol = symbolTable.getSymbol(node.getFormalId(), node.getLine());
+        printer.emitVar(node.getFormalId(), node.getFormalType(), symbol->getOffset());
     }
 
     void visit(ast::Formals& node) override {

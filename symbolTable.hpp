@@ -9,7 +9,13 @@ using namespace ast;
 #include <unordered_map>
 #include <string>
 #include <stack>
+#include <iostream>  // For std::cout
+#include <algorithm> // For std::reverse
 using namespace output;
+using namespace std;
+
+
+
 
 class SymbolTable {
 private:
@@ -49,8 +55,13 @@ public:
         }
     }
 
-    Symbol* getSymbol(const std::string &name) {
-        return getCurrentScope()->getSymbol(name);
+    Symbol* getSymbol(const std::string &name, int lineno) {
+        Symbol* symbol = getCurrentScope()->getSymbol(name);
+        if (symbol == nullptr) {
+            printf("error in symbolTable\n");
+            errorUndef(lineno, name);
+        }
+        return symbol;
     }
 
     void beginScope() {
@@ -70,6 +81,43 @@ public:
 
     Scope* getCurrentScope() {
         return scopeStack.top();
+    }
+
+    void printSymbolTable() const {
+        std::stack<Scope*> tempStack(scopeStack);
+        std::vector<Scope*> scopes;
+
+        // Collect scopes in order
+        while (!tempStack.empty()) {
+            scopes.push_back(tempStack.top());
+            tempStack.pop();
+        }
+
+        // Reverse to start with the global scope
+        std::reverse(scopes.begin(), scopes.end());
+
+        std::cout << "Symbol Table:\n";
+        for (size_t i = 0; i < scopes.size(); ++i) {
+            std::cout << "Scope " << i << (i == 0 ? " (Global)" : "") << ":\n";
+            const auto& symbols = scopes[i]->getSymbolTable();
+            for (const auto& entry : symbols) {
+                const Symbol& symbol = entry.second;
+                std::cout << "  Name: " << symbol.getName()
+                          << ", Type: " << (symbol.getSymbolType() == SymbolType::VARIABLE ? "Variable" : "Function")
+                          << ", Data Type: " << static_cast<int>(symbol.getDataType())
+                          << ", Offset: " << symbol.getOffset();
+                if (symbol.getSymbolType() == SymbolType::FUNCTION) {
+                    std::cout << ", Parameters: ";
+                    const auto& paramTypes = symbol.getParameterTypes();
+                    const auto& paramNames = symbol.getParameterNames();
+                    for (size_t j = 0; j < paramNames.size(); ++j) {
+                        std::cout << "(" << paramNames[j] << ": " << static_cast<int>(paramTypes[j]) << ")";
+                        if (j < paramNames.size() - 1) std::cout << ", ";
+                    }
+                }
+                std::cout << '\n';
+            }
+        }
     }
 };
 

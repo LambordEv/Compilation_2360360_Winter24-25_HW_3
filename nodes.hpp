@@ -93,6 +93,9 @@ namespace ast {
     class Exp : virtual public Node {
     public:
         Exp() = default;
+        virtual int getValueInt() const { return 0; }
+        virtual std::string getValueStr() const { return ""; }
+        virtual bool getValueBool() const { return false; }
     };
 
     /* Base class for all statements */
@@ -108,7 +111,7 @@ namespace ast {
 
         // Constructor that receives a C-style string that represents the number
         explicit Num(std::string str);
-        int getValue() const { return value; }
+        int getValueInt() const override { return value; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -122,7 +125,7 @@ namespace ast {
 
         // Constructor that receives a C-style (including b character) string that represents the number
         explicit NumB(std::string str);
-        int getValue() const { return value; }
+        int getValueInt() const override { return value; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -136,7 +139,7 @@ namespace ast {
 
         // Constructor that receives a C-style string that represents the string *including quotes*
         explicit String(std::string str);
-        std::string getValue() const { return value; }
+        std::string getValueStr() const override { return value; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -150,7 +153,7 @@ namespace ast {
 
         // Constructor that receives the boolean value
         explicit Bool(bool value);
-        bool getValue() const { return value; }
+        bool getValueBool() const override { return value; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -164,7 +167,7 @@ namespace ast {
 
         // Constructor that receives a C-style string that represents the identifier
         explicit ID(std::string str);
-        std::string getValue() const { return value; }
+        std::string getValueStr() const { return value; }
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -341,7 +344,7 @@ namespace ast {
         // Constructor that receives only the function identifier (for parameterless functions)
         explicit Call(std::shared_ptr<ID> func_id);
 
-        std::string getFuncId() const { return func_id->getValue(); }
+        std::string getFuncId() const { return func_id->getValueStr(); }
 
         std::shared_ptr<ExpList> getArgs() const { return args; }
 
@@ -460,7 +463,8 @@ namespace ast {
         // Constructor that receives the identifier, the type, and the initial value expression
         VarDecl(std::shared_ptr<ID> id, std::shared_ptr<Type> type, std::shared_ptr<Exp> init_exp = nullptr);
 
-        std::string getVarId() const { return id->getValue(); }
+        std::shared_ptr<ID> getVarId() const { return id; }
+        std::string getValueStr() const { return id->getValueStr(); }
         BuiltInType getVarType() const { return type->getTypeOfType(); }
         std::shared_ptr<Exp> getVarInitExp() const { return init_exp; }
 
@@ -480,7 +484,7 @@ namespace ast {
         // Constructor that receives the identifier and the expression to be assigned
         Assign(std::shared_ptr<ID> id, std::shared_ptr<Exp> exp);
 
-        std::string getAssignId() const { return id->getValue(); }
+        std::string getValueStr() const { return id->getValueStr(); }
         std::shared_ptr<Exp> getAssignExp() const { return exp; }
 
         void accept(Visitor &visitor) override {
@@ -499,7 +503,7 @@ namespace ast {
         // Constructor that receives the identifier and the type
         Formal(std::shared_ptr<ID> id, std::shared_ptr<Type> type);
 
-        std::string getFormalId() const { return id->getValue(); }
+        std::string getFormalId() const { return id->getValueStr(); }
         BuiltInType getFormalType() const { 
             return type->getTypeOfType(); }
 
@@ -567,7 +571,7 @@ namespace ast {
         FuncDecl(std::shared_ptr<ID> id, std::shared_ptr<Type> return_type, std::shared_ptr<Formals> formals,
                  std::shared_ptr<Statements> body);
 
-        std::string getFuncId() const { return id->getValue(); }
+        std::string getFuncId() const { return id->getValueStr(); }
         BuiltInType getFuncReturnType() const { return return_type->getTypeOfType(); }
         std::shared_ptr<Formals> getFuncParams() const { return formals; }
         std::shared_ptr<Statements> getFuncBody() const { return body; }

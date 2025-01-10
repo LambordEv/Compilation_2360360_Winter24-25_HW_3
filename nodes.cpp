@@ -49,6 +49,9 @@ namespace ast {
     BinOp::BinOp(BinOpType op, std::shared_ptr<Exp> left, std::shared_ptr<Exp> right)
             : Exp(), left(std::move(left)), right(std::move(right)), op(op) {
                 this->nodeType = NODE_BinOP;
+                
+                //std::cout << "Type of left --- " << typeid(*left).name() << std::endl;
+                //std::cout << "Type of right --- " << typeid(*this->right).name() << std::endl;
                 // if (left && right && 
                 //         (left->getType() == BuiltInType::BYTE && right->getType() == BuiltInType::BYTE)) {
                 //         this->resultType = BuiltInType::BYTE;
