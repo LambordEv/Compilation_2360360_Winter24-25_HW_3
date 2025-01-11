@@ -94,12 +94,10 @@ public:
     }
 
     Symbol* getSymbolName(const std::string& name) {
-        //printSymbolTable(symbolTable);
         auto it = symbolTable.find(name);
         if (it != symbolTable.end()) {
-            return &it->second;
+            return &(it->second);
         }
-        // printf("Get Symbol in %s\n", "getSymbol in Scope");
         return parent ? parent->getSymbolName(name) : nullptr;
     }
 

@@ -67,6 +67,16 @@ public:
         return symbol;
     }
 
+    Symbol* getFuncSymbol(const std::string &name, int lineno) {
+        // printf("Get Symbol in %s\n", "get_Symbol symbolTable");
+        Symbol* symbol = globalScope->getSymbolName(name);
+        // if (symbol == nullptr) {
+        //     printf("Undefined Variable in %s\n", "getSymbol in symbolTable");
+        //     errorUndef(lineno, name);
+        // }
+        return symbol;
+    }
+
     void beginScope(bool isLoopScope = false, std::string scopeName = "") {
         Scope* newScope = new Scope(scopeStack.top(), isLoopScope);
         scopeStack.push(newScope);
