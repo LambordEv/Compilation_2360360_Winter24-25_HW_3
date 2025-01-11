@@ -49,12 +49,12 @@ public:
                            const std::vector<BuiltInType>& paramTypes,
                            const std::vector<std::string>& paramNames, int lineno) {
         globalScope->addFunctionSymbol(name, returnType, paramTypes, paramNames, lineno);
-        beginScope();
-        for (size_t i = 0; i < paramNames.size(); ++i) {
-            char paramName[2096] = {0};                     /// TODO - Not appropriate
-            sscanf(paramName, "%s-Param%d\0", name, i);     /// TODO - Not appropriate
-            getCurrentScope()->addParameterSymbol(paramName, paramTypes[i], lineno);
-        }
+        // Scope* currScope = beginScope(false, name);
+        // for (size_t i = 0; i < paramNames.size(); ++i) {
+        //     char paramName[2096] = {0};                     /// TODO - Not appropriate
+        //     sscanf(paramName, "%s-Param%d\0", name.c_str(), i);     /// TODO - Not appropriate
+        //     currScope->addParameterSymbol(paramName, paramTypes[i], lineno);
+        // }
     }
 
     Symbol* getSymbol(const std::string &name, int lineno) {
@@ -77,9 +77,11 @@ public:
         return symbol;
     }
 
-    void beginScope(bool isLoopScope = false, std::string scopeName = "") {
-        Scope* newScope = new Scope(scopeStack.top(), isLoopScope);
+    Scope* beginScope(bool isLoopScope = false, std::string scopeName = "") {
+        Scope* newScope = new Scope(scopeStack.top(), isLoopScope, scopeName);
         scopeStack.push(newScope);
+
+        return newScope;
     }
 
     void endScope() {

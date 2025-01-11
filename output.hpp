@@ -7,6 +7,8 @@
 #include "visitor.hpp"
 #include "nodes.hpp"
 
+#define debugFlag false 
+
 namespace output {
     /* Error handling functions */
 

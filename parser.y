@@ -159,6 +159,7 @@ Statement: T_LBRACE Statements T_RBRACE { $$ = $2; }
             }
             | T_BREAK T_SC { $$ = make_shared<Break>(); }
             | T_CONTINUE T_SC { $$ = make_shared<Continue>(); }
+            | Exp { output::errorSyn(yylineno); }
 
 Call:   T_ID T_LPAREN ExpList T_RPAREN 
             {
@@ -238,7 +239,6 @@ Exp:    T_LPAREN Exp T_RPAREN { $$ = $2; }
 // TODO: Place any additional code here
 void yyerror(const char* msg) {
     output::errorSyn(yylineno);
-    //cerr << "Syntax error at line " << yylineno << ": " << msg << endl;
 }
 
 static BinOpType whatBinOpRecieved(string received)

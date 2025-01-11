@@ -11,7 +11,7 @@
 
 using namespace std;
 
-SemanticNodeType builtInToNodeType(const BuiltInType& type) {
+static SemanticNodeType builtInToNodeType(const BuiltInType& type) {
     switch (type) {
         case BuiltInType::TYPE_ERROR: return NODE_Undecided;
         case BuiltInType::VOID:       return NODE_Undecided;
@@ -23,7 +23,18 @@ SemanticNodeType builtInToNodeType(const BuiltInType& type) {
     }
 }
 
-string builtInTypeToString(const BuiltInType& type) {
+static BuiltInType semanticToBuiltInType(const SemanticNodeType& type) {
+    switch (type) {
+        case NODE_Undecided: return BuiltInType::TYPE_ERROR;
+        case NODE_Bool:      return BuiltInType::BOOL;
+        case NODE_NumB:      return BuiltInType::BYTE;
+        case NODE_Num:       return BuiltInType::INT;
+        case NODE_String:    return BuiltInType::STRING;
+        default:             return BuiltInType::TYPE_ERROR;
+    }
+}
+
+static string builtInTypeToString(const BuiltInType& type) {
     switch (type) {
         case BuiltInType::TYPE_ERROR: return "TYPE_ERROR";
         case BuiltInType::VOID:       return "VOID";
@@ -94,6 +105,33 @@ public:
         if (!var) {
             errorUndef(node.getLine(), node.getValueStr());
         }
+
+        if (var && var->getSymbolType() == VARIABLE) {
+            node.setType(builtInToNodeType(var->getDataType()));
+        }
+        // else {
+        //     cout << "In Visit ID symbol returned as nullptr, WTF?!" << endl;
+        //     std::string scopeName = symbolTable.getCurrentScope()->getScopeName();
+        //     Symbol* func;
+        //     BuiltInType idType = BuiltInType::TYPE_ERROR;
+        //     int index = -1;
+        //     if (scopeName != "") {
+        //         func = symbolTable.getFuncSymbol(scopeName, node.getLine());
+        //         if (func != nullptr && func->getSymbolType() == FUNCTION) {
+        //             vector<string> paramsIds = func->getParameterNames();
+        //             if (std::find(paramsIds.begin(), paramsIds.end(), node.getValueStr()) == paramsIds.end()) {
+        //                 errorUndef(node.getLine(), node.getValueStr());
+        //             }
+        //             index = std::distance(paramsIds.begin(), std::find(paramsIds.begin(), paramsIds.end(), node.getValueStr()));
+        //         }
+        //     }
+        //     if (index == -1) {
+        //         errorUndef(node.getLine(), node.getValueStr());
+        //     }
+        //     idType = func->getParameterTypes()[index];
+        //     node.setType(builtInToNodeType(idType));
+        // }
+        
     }
 
     void visit(ast::BinOp& node) override {
@@ -189,7 +227,7 @@ public:
     void visit(ast::Not& node) override {
         node.getExpr()->accept(*this);
         
-        if (node.getType() == NODE_Bool){
+        if (node.getExpr()->getType() == NODE_Bool){
             node.setType(NODE_Bool);
         } else {
             errorMismatch(node.getLine());
@@ -233,9 +271,11 @@ public:
             node.getExpr()->getType() == NODE_NumB) {
             expSymbol = symbolTable.getSymbol(node.getExpr()->getValueStr(), node.getExpr()->getLine());
             if(!expSymbol) {
-                cout << "In Visit Cast symbol returned as nullptr, WTF?!" << endl;
+                originalType = semanticToBuiltInType(node.getExpr()->getType());
+                // cout << "In Visit Cast symbol returned as nullptr, WTF?!" << endl;
+            }else{
+                originalType = expSymbol->getDataType();
             }
-            originalType = expSymbol->getDataType();
         }
 
         if (node.getTargetType() == INT
@@ -255,9 +295,10 @@ public:
         }
 
         //Update the type of the symbol in the symbolTable
+        /*cout << "aadas" << endl;
         if (nullptr != expSymbol) {
             expSymbol->setDataType(targetType);
-        }
+        }*/
     }
 
     void visit(ast::ExpList& node) override {
@@ -268,19 +309,15 @@ public:
 
     void visit(ast::Call& node) override {
         // printf("Get Symbol in %s\n", "Visit Call");
-        if (symbolTable.getFuncSymbol(node.getFuncId(), node.getLine()) == nullptr) {
-            errorUndefFunc(node.getLine(), node.getFuncId());
-        }
-
         Symbol* func = symbolTable.getSymbol(node.getFuncId(), node.getLine());
+        if (func && func->getSymbolType() != FUNCTION) {
+            errorDefAsVar(node.getLine(), node.getFuncId());
+        }
         if (!func) {
             errorUndefFunc(node.getLine(), node.getFuncId());
         }
 
-        if (func->getSymbolType() != FUNCTION) {
-            errorDefAsVar(node.getLine(), node.getFuncId());
-        }
-
+        node.setType(builtInToNodeType(func->getDataType())); 
         node.getArgsExp()->accept(*this);
 
         vector<BuiltInType> paramsTypesInSymbolTable = func->getParameterTypes();
@@ -317,6 +354,9 @@ public:
         }
         for (size_t i = 0; i < paramsTypesInSymbolTable.size(); i++) {
             if (paramsTypesInSymbolTable[i] != types[i]) {
+                if((paramsTypesInSymbolTable[i] == BuiltInType::INT && types[i] == BuiltInType::BYTE)) {
+                    continue;
+                }
                 errorPrototypeMismatch(node.getLine(), node.getFuncId(), paramsTypesInSymbolTableStr);
             }
         }
@@ -326,9 +366,18 @@ public:
     }
 
     void visit(ast::Statements& node) override {
+        // beginScope();
         for (auto& statement : node.getStatements()) {
+            if (statement->getType() == NODE_Statements) {
+                beginScope();
+            }
             statement->accept(*this);
+            // cout << "Current Statement Type: " << statement->getType() << endl;
+            if (statement->getType() == NODE_Statements) {
+                endScope();
+            }
         }
+        // endScope();
     }
 
     void visit(ast::Break& node) override {
@@ -344,7 +393,9 @@ public:
     }
 
     void visit(ast::Return& node) override {
-        node.getExpr()->accept(*this);
+        if(nullptr != node.getExpr()) {
+            node.getExpr()->accept(*this);
+        }
 
         string funcName = symbolTable.getCurrentScope()->getScopeName();
         Symbol* func = symbolTable.getSymbol(funcName, node.getLine());
@@ -355,9 +406,11 @@ public:
         
         BuiltInType expType = BuiltInType::TYPE_ERROR;
         if(node.getExpr() == nullptr) {
+            // cout << "Expresion is null" << endl;
             expType = BuiltInType::VOID;
         } 
         else {
+            // cout << "Expresion is not null --- Its type is " << node.getExpr()->getType() << endl;
             if (node.getExpr()->getType() == NODE_ID) {
                 Symbol* expSymbol = symbolTable.getSymbol(node.getExpr()->getValueStr(), node.getExpr()->getLine());
                 if (expSymbol == nullptr) {
@@ -368,30 +421,45 @@ public:
                 expType = BuiltInType::INT;
             } else if (node.getExpr()->getType() == NODE_NumB) {
                 expType = BuiltInType::BYTE;
+            } else if (node.getExpr()->getType() == NODE_Bool) {
+                expType = BuiltInType::BOOL;
             }
         }
 
-        if (funcRetType != expType) {
+        if (funcRetType != expType && !(funcRetType == BuiltInType::INT && expType == BuiltInType::BYTE)) {
+            // cout << "funcRetType: " << funcRetType << " expType: " << expType << endl;
+           
             errorMismatch(node.getLine());
         }
     }
 
     void visit(ast::If& node) override {
         beginScope();
-        beginScope();
-        // cout<< "before line number is " << node.getLine() << endl;
+        // beginScope();
         node.getCondition()->accept(*this);
-        // cout << "In Visit If Condition Exists " << node.getCondition()->getType() << endl;
-        // cout<< "after line number is " << node.getLine() << endl;
         if (node.getCondition()->getType() != NODE_Bool) {
-            errorMismatch(node.getLine());
+            errorMismatch(node.getCondition()->getLine());
+        }
+        // node.getThen()->accept(*this);
+        // cout << "In Visit If Condition Exists " << node.getThen()->getType() << endl;
+        if (node.getThen()->getType() == NODE_Statements) {
+            beginScope();
         }
         node.getThen()->accept(*this);
+        if (node.getThen()->getType() == NODE_Statements) {
+            endScope();
+        }
+        
+        // endScope();
         endScope();
-        endScope();
+
         if (node.getElse()) {
             beginScope();
-            node.getElse()->accept(*this);
+            if(node.getElse()->getType() == NODE_Statements) {
+                beginScope();
+                node.getElse()->accept(*this);
+                endScope();
+            }
             endScope();
         }
     }
@@ -400,10 +468,15 @@ public:
         // Condition scope (?)
         beginScope("", true);
         node.getCondition()->accept(*this);
+        if (node.getCondition()->getType() != NODE_Bool) {
+            errorMismatch(node.getCondition()->getLine());
+        }
         // Body scope (?)
-        if (node.getBody()->getType() != NODE_Undecided) {
+        if (node.getBody()->getType() == NODE_Statements) {
             beginScope("", true);
-            node.getBody()->accept(*this);
+        }
+        node.getBody()->accept(*this);
+        if (node.getBody()->getType() == NODE_Statements) {
             endScope();
         }
         
@@ -415,12 +488,21 @@ public:
     void visit(ast::VarDecl& node) override {
         if (node.getVarInitExp()) {
             node.getVarInitExp()->accept(*this);
+
+            //cout << "In Visit VarDecl InitExp Type is " <<  << endl;
             if (node.getVarInitExp()->getType() == NODE_ID) {
+                //cout << "Out 1" << endl;
                 Symbol* expSymbol = symbolTable.getSymbol(node.getVarInitExp()->getValueStr(), node.getVarInitExp()->getLine());
                 if (expSymbol == nullptr) {
+                    //cout << "Out 2" << endl;
                     errorUndef(node.getVarInitExp()->getLine(), node.getVarInitExp()->getValueStr());
+                } else if (expSymbol->getSymbolType() == FUNCTION) {
+                    //cout << "Out 3" << endl;
+                    errorDefAsFunc(node.getLine(), node.getVarInitExp()->getValueStr());
                 }
+                //cout << "Out 4" << endl;
             }
+            //cout << "Out 5" << endl;
         }
 
         if (symbolTable.getSymbol(node.getValueStr(), node.getLine())) {
@@ -436,7 +518,7 @@ public:
 
 
         node.getVarId()->accept(*this);
-        if(node.getVarType() == BuiltInType::BYTE && node.getVarInitExp()->getType() == NODE_Num) {
+        if(node.getVarInitExp() && node.getVarType() == BuiltInType::BYTE && node.getVarInitExp()->getType() == NODE_Num) {
             errorMismatch(node.getLine());
         }
         if (node.getVarInitExp()){
@@ -457,6 +539,9 @@ public:
         if (!var) {
             errorUndef(node.getLine(), node.getValueStr());
         }
+        if (var->getSymbolType() == FUNCTION) {
+            errorDefAsFunc(node.getLine(), node.getValueStr());
+        }
         node.getAssignExp()->accept(*this);
 
         BuiltInType varType = var->getDataType();
@@ -465,6 +550,9 @@ public:
             Symbol* expSymbol = symbolTable.getSymbol(node.getAssignExp()->getValueStr(), node.getAssignExp()->getLine());
             if (expSymbol == nullptr) {
                 errorUndef(node.getAssignExp()->getLine(), node.getAssignExp()->getValueStr());
+            }
+            else if (expSymbol->getSymbolType() == FUNCTION) {
+                errorDefAsFunc(node.getAssignExp()->getLine(), node.getAssignExp()->getValueStr());
             }
             expType = expSymbol->getDataType();
         } else if (node.getAssignExp()->getType() == NODE_Num) {
@@ -476,20 +564,19 @@ public:
         } else if (node.getAssignExp()->getType() == NODE_String) {
             expType = BuiltInType::STRING;
         }
-        
-        if (varType != expType && !(varType == BuiltInType::INT && expType == BuiltInType::BYTE)) {
-            errorMismatch(node.getLine());
+
+        if (varType != expType && (!(varType == BuiltInType::INT && expType == BuiltInType::BYTE) ||
+            (varType == BuiltInType::BYTE && expType == BuiltInType::INT))) {
+            errorMismatch(node.getAssignIdLine());
         }
     }
 
     void visit(ast::Formal& node) override {
-        // printf("Get Symbol in %s\n", "Visit Formal 1");
         if (symbolTable.getSymbol(node.getFormalId(), node.getLine())) {
             errorDef(node.getLine(), node.getFormalId());
         }
 
         symbolTable.addParameterSymbol(node.getFormalId(), node.getFormalType(), node.getLine());
-        // printf("Get Symbol in %s\n", "Visit Formal 3");
         Symbol* symbol = symbolTable.getSymbol(node.getFormalId(), node.getLine());
         printer.emitVar(node.getFormalId(), node.getFormalType(), symbol->getOffset());
     }
@@ -522,10 +609,11 @@ public:
 
         for (auto& funcDecl : node.getFuncs()) {
             this->symbolTable.addFunctionSymbol(funcDecl->getFuncId(), funcDecl->getFuncReturnType(), funcDecl->getFuncParams()->getFormalsType(), 
-                funcDecl->getFuncParams()->getFormalsIds(), funcDecl->getLine());
+                funcDecl->getFuncParams()->getFormalsIds(), funcDecl->getFuncIdLine());
         }
-
-        if(symbolTable.getFuncSymbol("main", -1) == nullptr) {
+        Symbol* main = symbolTable.getFuncSymbol("main", -1);
+      
+        if(main == nullptr || main->getDataType() != BuiltInType::VOID || main->getParameterTypes().size() != 0) {
             errorMainMissing();
         }
 

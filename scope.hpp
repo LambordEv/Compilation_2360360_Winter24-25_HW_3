@@ -66,7 +66,7 @@ public:
             if (scopeName == "") {
                 this->scopeName = parent->getScopeName();
             }
-            // this->nextParamOffset = parent->getNextParamOffset();
+            this->inLoopScope = parent->isInLoopScope() ? parent->isInLoopScope() : isLoopScope;
         }
     }
 

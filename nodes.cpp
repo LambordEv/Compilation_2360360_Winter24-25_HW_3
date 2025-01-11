@@ -21,7 +21,9 @@ static bool checkTypesForRelOp(SemanticNodeType left, SemanticNodeType right) {
 
 namespace ast {
 
-    Node::Node() : line(yylineno), text(yytext) {}
+    Node::Node() : line(yylineno), text(yytext) {
+        this->nodeType = NODE_Undecided;
+    }
 
     Num::Num(const std::string str = "") : Exp(), value(std::stoi(str)) {
         this->text = str;

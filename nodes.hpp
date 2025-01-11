@@ -9,35 +9,35 @@
 namespace ast {
 
     enum SemanticNodeType {
-        NODE_Undecided = -1,
-        NODE_Exp,
-        NODE_Statement,
-        NODE_Num,
-        NODE_NumB,
-        NODE_String,
-        NODE_Bool,
-        NODE_ID,
-        NODE_BinOP,
-        NODE_RelOP,
-        NODE_Not,
-        NODE_And,
-        NODE_Or,
-        NODE_Type,
-        NODE_Cast,
-        NODE_ExpList,
-        NODE_Call,
-        NODE_Statements,
-        NODE_Break,
-        NODE_Continue,
-        NODE_Return,
-        NODE_If,
-        NODE_While,
-        NODE_VarDecl,
-        NODE_Assign,
-        NODE_Formal,
-        NODE_Formals,
-        NODE_FuncDecl,
-        NODE_Funcs
+        NODE_Undecided      = -1,
+        NODE_Exp            = 0,
+        NODE_Statement      = 1,
+        NODE_Num            = 2,
+        NODE_NumB           = 3,
+        NODE_String         = 4,
+        NODE_Bool           = 5,
+        NODE_ID             = 6,
+        NODE_BinOP          = 7,
+        NODE_RelOP          = 8,
+        NODE_Not            = 9,
+        NODE_And            = 10,
+        NODE_Or             = 11,
+        NODE_Type           = 12,
+        NODE_Cast           = 13,
+        NODE_ExpList        = 14,
+        NODE_Call           = 15,
+        NODE_Statements     = 16,
+        NODE_Break          = 17,
+        NODE_Continue       = 18,
+        NODE_Return         = 19,
+        NODE_If             = 20,
+        NODE_While          = 21,
+        NODE_VarDecl        = 22,
+        NODE_Assign         = 23,
+        NODE_Formal         = 24,
+        NODE_Formals        = 25,
+        NODE_FuncDecl       = 26,
+        NODE_Funcs          = 27,
     };
 
     /* Arithmetic operations */
@@ -100,7 +100,10 @@ namespace ast {
 
     /* Base class for all statements */
     class Statement : virtual public Node { 
-
+    public:
+        Statement() : Node() {
+            // this->nodeType = NODE_Statement;
+        }
     };
 
     /* Number literal */
@@ -479,6 +482,7 @@ namespace ast {
         Assign(std::shared_ptr<ID> id, std::shared_ptr<Exp> exp);
 
         std::string getValueStr() const { return id->getValueStr(); }
+        int getAssignIdLine() const { return id->getLine(); }
         std::shared_ptr<Exp> getAssignExp() const { return exp; }
 
         void accept(Visitor &visitor) override {
@@ -566,6 +570,7 @@ namespace ast {
                  std::shared_ptr<Statements> body);
 
         std::string getFuncId() const { return id->getValueStr(); }
+        int getFuncIdLine() const { return id->getLine(); }
         BuiltInType getFuncReturnType() const { return return_type->getTypeOfType(); }
         std::shared_ptr<Formals> getFuncParams() const { return formals; }
         std::shared_ptr<Statements> getFuncBody() const { return body; }
