@@ -1,8 +1,0 @@
-void main() {
-    int x = 2;
-    byte y = 100b;
-    if (x < 100) {
-        x = 0;
-    }
-    int z;
-}
