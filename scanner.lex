@@ -5,6 +5,7 @@
 #include <iostream>
 #include "output.hpp"
 #include "parser.tab.h"
+#include "nodes.hpp"
 
 
 /*------- Function Declarion Section -------*/
@@ -50,6 +51,8 @@ lParenToken                             (\()
 rParenToken                             (\))
 lBraceToken                             (\{)
 rBraceToken                             (\})
+lBrackToken                             (\[)
+rBrackToken                             (\])
 assignToken                             (\=)
 
 relopSign                               (==|!=|<|>|<=|>=)
@@ -57,7 +60,7 @@ binopSign                               (\+|\-|\*|\/)
 
 commentLexema                           (\/\/.*)
 
-idLexema                                ({letter}+{decimalDigit}*{letter}*)
+idLexema                                ({letter}+[0-9a-zA-Z]*)
 
 numLexema                               ((0)|([1-9]+{decimalDigit}*))
 
@@ -69,10 +72,10 @@ stringLexemaEnterExit                   (\")
 
 
 %%
-{voidToken}                             { yylval = make_shared<Type>(VOID); return T_VOID; }
-{intToken}                              { yylval = make_shared<Type>(INT); return T_INT; }
-{byteToken}                             { yylval = make_shared<Type>(BYTE); return T_BYTE; }
-{boolToken}                             { yylval = make_shared<Type>(BOOL); return T_BOOL; }
+{voidToken}                             { yylval = make_shared<PrimitiveType>(VOID); return T_VOID; }
+{intToken}                              { yylval = make_shared<PrimitiveType>(INT); return T_INT; }
+{byteToken}                             { yylval = make_shared<PrimitiveType>(BYTE); return T_BYTE; }
+{boolToken}                             { yylval = make_shared<PrimitiveType>(BOOL); return T_BOOL; }
 {andToken}                              { return T_AND; }
 {orToken}                               { return T_OR; }
 {notToken}                              { return T_NOT; }
@@ -90,11 +93,13 @@ stringLexemaEnterExit                   (\")
 {rParenToken}                           { return T_RPAREN; }
 {lBraceToken}                           { return T_LBRACE; }
 {rBraceToken}                           { return T_RBRACE; }
+{lBrackToken}                           { return T_LBRACK; }
+{rBrackToken}                           { return T_RBRACK; }
 {assignToken}                           { return T_ASSIGN; }
 
-{relopSign}                             { yylval = make_shared<RelOp>(whatRelOpRecieved(yytext)); return T_RELOP; }
-[+-]                                    { yylval = make_shared<BinOp>(whatBinOpRecieved(yytext)); return T_ADD_SUB; }
-[*/]                                    { yylval = make_shared<BinOp>(whatBinOpRecieved(yytext)); return T_MUL_DIV; }
+{relopSign}                             { yylval = make_shared<RelOp>(whatRelOpRecieved(yytext), nullptr, nullptr); return T_RELOP; }
+[+-]                                    { yylval = make_shared<BinOp>(whatBinOpRecieved(yytext), nullptr, nullptr); return T_ADD_SUB; }
+[*/]                                    { yylval = make_shared<BinOp>(whatBinOpRecieved(yytext), nullptr, nullptr); return T_MUL_DIV; }
 {commentLexema}                         { ; }
 {idLexema}                              { yylval = make_shared<ID>(yytext); return T_ID; }
 {numLexema}                             { yylval = make_shared<Num>(yytext); return T_NUM; }

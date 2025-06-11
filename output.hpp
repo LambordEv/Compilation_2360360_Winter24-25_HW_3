@@ -38,6 +38,7 @@ namespace output {
 
     void errorByteTooLarge(int lineno, int value);
 
+    void ErrorInvalidAssignArray(int lineno, const std::string &id_arr);
 
     /* ScopePrinter class
      * This class is used to print scopes in a human-readable format.
@@ -58,6 +59,8 @@ namespace output {
         void endScope();
 
         void emitVar(const std::string &id, const ast::BuiltInType &type, int offset);
+
+        void emitArr(const std::string &id, const ast::BuiltInType &type, int length , int offset );
 
         void emitFunc(const std::string &id, const ast::BuiltInType &returnType,
                       const std::vector<ast::BuiltInType> &paramTypes);

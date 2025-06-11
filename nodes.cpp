@@ -77,14 +77,19 @@ namespace ast {
                 // }
             }
 
-    Type::Type(BuiltInType type) : Node(), type(type) {
+    PrimitiveType::PrimitiveType(BuiltInType type) : Node(), type(type) {
         this->nodeType = NODE_Type;
     }
 
-    Cast::Cast(std::shared_ptr<Exp> exp, std::shared_ptr<Type> target_type)
-            : Exp(), exp(std::move(exp)), target_type(std::move(target_type)) {
-                this->nodeType = NODE_Cast;
-            }
+    ArrayType::ArrayType(BuiltInType type, std::shared_ptr<Exp> length)
+        : PrimitiveType(type), size(std::move(length)) {
+        this->nodeType = NODE_ArrayType;
+    }
+
+    Cast::Cast(std::shared_ptr<Exp> exp, std::shared_ptr<PrimitiveType> target_type)
+        : Exp(), exp(std::move(exp)), target_type(std::move(target_type)) {
+        this->nodeType = NODE_Cast;
+    }
 
     Not::Not(std::shared_ptr<Exp> exp) : Exp(), exp(std::move(exp)) {
         this->nodeType = NODE_Not;
@@ -161,20 +166,34 @@ namespace ast {
                 this->nodeType = NODE_While;
               }
 
-    VarDecl::VarDecl(std::shared_ptr<ID> id, std::shared_ptr<Type> type, std::shared_ptr<Exp> init_exp)
-            : Statement(), id(std::move(std::move(id))), type(std::move(type)), init_exp(std::move(init_exp)) {
-                this->nodeType = NODE_VarDecl;
-            }
+    VarDecl::VarDecl(std::shared_ptr<ID> id, std::shared_ptr<PrimitiveType> type, std::shared_ptr<Exp> init_exp)
+        : Statement(), id(std::move(std::move(id))), type(std::move(type)), init_exp(std::move(init_exp)) {
+        if(nullptr != this->type && NODE_ArrayType == this->type->getType()) {
+            this->nodeType = NODE_ArrayType;
+        } else {
+            this->nodeType = NODE_VarDecl;
+        }
+    }
 
     Assign::Assign(std::shared_ptr<ID> id, std::shared_ptr<Exp> exp)
-            : Statement(), id(std::move(id)), exp(std::move(exp)) {
-                this->nodeType = NODE_Assign;
-             }
+        : Statement(), id(std::move(id)), exp(std::move(exp)) {
+    this->nodeType = NODE_Assign;
+    }
 
-    Formal::Formal(std::shared_ptr<ID> id, std::shared_ptr<Type> type)
-            : Node(), id(std::move(id)), type(std::move(type)) {
-                this->nodeType = NODE_Formal;
-            }
+    ArrayAssign::ArrayAssign(std::shared_ptr<ID> id, std::shared_ptr<Exp> exp, std::shared_ptr<Exp> index)
+            : Statement(), id(std::move(id)), exp(std::move(exp)), index(std::move(index)) {
+        this->nodeType = Node_ArrayAssign;
+    }
+    
+    ArrayDereference::ArrayDereference(std::shared_ptr<ID> id, std::shared_ptr<Exp> index)
+            : Exp(), id(std::move(id)), index(std::move(index)) {
+        this->nodeType = NODE_ArrayDereference;
+    }
+
+    Formal::Formal(std::shared_ptr<ID> id, std::shared_ptr<PrimitiveType> type)
+        : Node(), id(std::move(id)), type(std::move(type)) {
+        this->nodeType = NODE_Formal;
+    }
 
     Formals::Formals(std::shared_ptr<Formal> formal) : Node(), formals({std::move(formal)}) {
         this->nodeType = NODE_Formals;
@@ -188,12 +207,11 @@ namespace ast {
         formals.push_back(formal);
     }
 
-    FuncDecl::FuncDecl(std::shared_ptr<ID> id, std::shared_ptr<Type> return_type, std::shared_ptr<Formals> formals,
-                       std::shared_ptr<Statements> body)
-            : Node(), id(std::move(id)), return_type(std::move(return_type)), formals(std::move(formals)),
-              body(std::move(body)) { 
-                this->nodeType = NODE_FuncDecl;
-              }
+    FuncDecl::FuncDecl(std::shared_ptr<ID> id, std::shared_ptr<PrimitiveType> return_type, std::shared_ptr<Formals> formals, std::shared_ptr<Statements> body)
+    : Node(), id(std::move(id)), return_type(std::move(return_type)), formals(std::move(formals)),
+        body(std::move(body)) { 
+        this->nodeType = NODE_FuncDecl;
+    }
 
     Funcs::Funcs(std::shared_ptr<FuncDecl> func) : Node(), funcs({std::move(func)}) {
         this->nodeType = NODE_Funcs;

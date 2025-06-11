@@ -44,6 +44,7 @@ shared_ptr<Node> program;
 %nonassoc   T_BYTE
 %nonassoc   T_INT
 %nonassoc   T_VOID
+%nonassoc   T_COMMENT
 
 // TODO: Define precedence and associativity here
 %right      T_ASSIGN
@@ -57,6 +58,8 @@ shared_ptr<Node> program;
 %left       T_RPAREN
 %left       T_LBRACE
 %left       T_RBRACE
+%left       T_RBRACK
+%left       T_LBRACK
 %right      T_ELSE
 
 %%
@@ -78,14 +81,14 @@ Funcs: { $$ = make_shared<Funcs>(); }
 FuncDecl: RetType T_ID T_LPAREN Formals T_RPAREN T_LBRACE Statements T_RBRACE 
             { 
                 shared_ptr<ID> id_ptr = dynamic_pointer_cast<ID>($2);
-                shared_ptr<Type> retType_ptr = dynamic_pointer_cast<Type>($1);
+                shared_ptr<PrimitiveType> retType_ptr = dynamic_pointer_cast<PrimitiveType>($1);
                 shared_ptr<Formals> formals_ptr = dynamic_pointer_cast<Formals>($4);
                 shared_ptr<Statements> statements_ptr = dynamic_pointer_cast<Statements>($7);
                 $$ = make_shared<FuncDecl>(id_ptr, retType_ptr, formals_ptr, statements_ptr); 
             }
 
-RetType: Type { $$ = make_shared<Type>(whatTypeReceived($1->text)); }
-        | T_VOID { $$ = make_shared<Type>(whatTypeReceived($1->text)); }
+RetType: Type { $$ = make_shared<PrimitiveType>(whatTypeReceived($1->text)); }
+        | T_VOID { $$ = make_shared<PrimitiveType>(whatTypeReceived($1->text)); }
 
 Formals: { $$ = make_shared<Formals>(); }
         | FormalsList { $$ = $1; }
@@ -102,7 +105,7 @@ FormalsList: FormalDecl { $$ = make_shared<Formals>(dynamic_pointer_cast<Formal>
 FormalDecl: Type T_ID 
             { 
                 shared_ptr<ID> id_ptr = make_shared<ID>($2->text);
-                shared_ptr<Type> retType_ptr = dynamic_pointer_cast<Type>($1);
+                shared_ptr<PrimitiveType> retType_ptr = dynamic_pointer_cast<PrimitiveType>($1);
                 $$ = make_shared<Formal>(id_ptr, retType_ptr); 
             }
 
@@ -119,13 +122,13 @@ Statement: T_LBRACE Statements T_RBRACE { $$ = $2; }
             | Type T_ID T_SC 
             { 
                 shared_ptr<ID> id_ptr = make_shared<ID>($2->text);
-                shared_ptr<Type> type_ptr = dynamic_pointer_cast<Type>($1);
+                shared_ptr<PrimitiveType> type_ptr = dynamic_pointer_cast<PrimitiveType>($1);
                 $$ = make_shared<VarDecl>(id_ptr, type_ptr); 
             }
             | Type T_ID T_ASSIGN Exp T_SC 
             { 
                 shared_ptr<ID> id_ptr = make_shared<ID>($2->text);
-                shared_ptr<Type> type_ptr = dynamic_pointer_cast<Type>($1);
+                shared_ptr<PrimitiveType> type_ptr = dynamic_pointer_cast<PrimitiveType>($1);
                 shared_ptr<Exp> exp_ptr = dynamic_pointer_cast<Exp>($4);
                 $$ = make_shared<VarDecl>(id_ptr, type_ptr, exp_ptr); 
             }
@@ -134,6 +137,21 @@ Statement: T_LBRACE Statements T_RBRACE { $$ = $2; }
                 shared_ptr<ID> id_ptr = make_shared<ID>($1->text);
                 shared_ptr<Exp> exp_ptr = dynamic_pointer_cast<Exp>($3);
                 $$ = make_shared<Assign>(id_ptr, exp_ptr); 
+            }
+            | T_ID T_LBRACK Exp T_RBRACK T_ASSIGN Exp T_SC 
+            { 
+                auto id_ptr = dynamic_pointer_cast<ID>($1);
+                auto index_ptr = dynamic_pointer_cast<Exp>($3);
+                auto value_ptr = dynamic_pointer_cast<Exp>($6);
+                $$ = make_shared<ArrayAssign>(id_ptr, value_ptr, index_ptr);
+            }
+            | Type T_ID T_LBRACK Exp T_RBRACK T_SC 
+            { 
+                auto base_type = dynamic_pointer_cast<PrimitiveType>($1);
+                auto length_expr = dynamic_pointer_cast<Exp>($4);
+                auto array_type = make_shared<ArrayType>(base_type->type, length_expr);
+                auto id_ptr = dynamic_pointer_cast<ID>($2);
+                $$ = make_shared<VarDecl>(id_ptr, array_type, nullptr);
             }
             | Call T_SC { $$ = $1; }
             | T_RETURN T_SC { $$ = make_shared<Return>(); }
@@ -178,11 +196,17 @@ ExpList: Exp { $$ = make_shared<ExpList>(dynamic_pointer_cast<Exp>($1)); }
                 $$ = exp_list_ptr;
             }
 
-Type:   T_INT { $$ = make_shared<Type>(BuiltInType::INT); }
-            | T_BYTE { $$ = make_shared<Type>(BuiltInType::BYTE); }
-            | T_BOOL { $$ = make_shared<Type>(BuiltInType::BOOL); }
+Type:   T_INT { $$ = make_shared<PrimitiveType>(BuiltInType::INT); }
+            | T_BYTE { $$ = make_shared<PrimitiveType>(BuiltInType::BYTE); }
+            | T_BOOL { $$ = make_shared<PrimitiveType>(BuiltInType::BOOL); }
 
 Exp:    T_LPAREN Exp T_RPAREN { $$ = $2; }
+            | T_ID T_LBRACK Exp T_RBRACK 
+            { 
+                auto id_ptr = dynamic_pointer_cast<ID>($1);
+                auto index_ptr = dynamic_pointer_cast<Exp>($3);
+                $$ = make_shared<ArrayDereference>(id_ptr, index_ptr);
+            }
             | Exp T_MUL_DIV Exp
             { 
                 BinOpType binOp = whatBinOpRecieved($2->text);
@@ -229,7 +253,7 @@ Exp:    T_LPAREN Exp T_RPAREN { $$ = $2; }
             }
             | T_LPAREN Type T_RPAREN Exp 
             { 
-                shared_ptr<Type> type_ptr = dynamic_pointer_cast<Type>($2);
+                shared_ptr<PrimitiveType> type_ptr = dynamic_pointer_cast<PrimitiveType>($2);
                 shared_ptr<Exp> exp_ptr = dynamic_pointer_cast<Exp>($4);
                 $$ = make_shared<Cast>(exp_ptr, type_ptr); 
             }
@@ -238,6 +262,7 @@ Exp:    T_LPAREN Exp T_RPAREN { $$ = $2; }
 
 // TODO: Place any additional code here
 void yyerror(const char* msg) {
+    //cout << msg << endl;
     output::errorSyn(yylineno);
 }
 

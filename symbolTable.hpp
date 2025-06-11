@@ -1,6 +1,6 @@
 #ifndef SYMBOL_TABLE_HPP
 #define SYMBOL_TABLE_HPP
-
+ 
 #include "scope.hpp"
 #include "nodes.hpp"
 #include "output.hpp"
@@ -13,15 +13,15 @@ using namespace ast;
 #include <algorithm> // For std::reverse
 using namespace output;
 using namespace std;
-
-
-
-
+ 
+ 
+ 
+ 
 class SymbolTable {
 private:
     Scope* globalScope; // Global scope for functions and global variables
     std::stack<Scope*> scopeStack; // Stack to manage nested scopes
-
+ 
 public:
     SymbolTable() {
         globalScope = new Scope(nullptr);
@@ -29,22 +29,26 @@ public:
         // globalScope->addFunctionSymbol("print", BuiltInType::VOID, {BuiltInType::STRING}, {"str"}, -1);
         // globalScope->addFunctionSymbol("printi", BuiltInType::VOID, {BuiltInType::INT}, {"num"}, -1);
     }
-
+ 
     ~SymbolTable() {
         while (!scopeStack.empty()) {
             delete scopeStack.top();
             scopeStack.pop();
         }
     }
-
+ 
     void addVariableSymbol(const std::string& name, BuiltInType dataType, int lineno) {
         getCurrentScope()->addVariableSymbol(name, dataType, lineno);
     }
-
+ 
+    void addArraySymbol(const std::string& name, BuiltInType dataType, int length, int lineno) {
+        getCurrentScope()->addArraySymbol(name, dataType, length, lineno);
+    }
+ 
     void addParameterSymbol(const std::string& name, BuiltInType dataType, int lineno) {
         getCurrentScope()->addParameterSymbol(name, dataType, lineno);
     }
-
+ 
     void addFunctionSymbol(const std::string& name, BuiltInType returnType,
                            const std::vector<BuiltInType>& paramTypes,
                            const std::vector<std::string>& paramNames, int lineno) {
@@ -56,7 +60,7 @@ public:
         //     currScope->addParameterSymbol(paramName, paramTypes[i], lineno);
         // }
     }
-
+ 
     Symbol* getSymbol(const std::string &name, int lineno) {
         // printf("Get Symbol in %s\n", "get_Symbol symbolTable");
         Symbol* symbol = getCurrentScope()->getSymbolName(name);
@@ -66,7 +70,7 @@ public:
         // }
         return symbol;
     }
-
+ 
     Symbol* getFuncSymbol(const std::string &name, int lineno) {
         // printf("Get Symbol in %s\n", "get_Symbol symbolTable");
         Symbol* symbol = globalScope->getSymbolName(name);
@@ -76,14 +80,14 @@ public:
         // }
         return symbol;
     }
-
+ 
     Scope* beginScope(bool isLoopScope = false, std::string scopeName = "") {
         Scope* newScope = new Scope(scopeStack.top(), isLoopScope, scopeName);
         scopeStack.push(newScope);
-
+ 
         return newScope;
     }
-
+ 
     void endScope() {
         if (scopeStack.size() > 1) { 
             Scope* currentScope = scopeStack.top();
@@ -93,24 +97,24 @@ public:
             throw std::runtime_error("Cannot end the last scope");
         }
     }
-
+ 
     Scope* getCurrentScope() {
         return scopeStack.top();
     }
-
+ 
     void printSymbolTable() const {
         std::stack<Scope*> tempStack(scopeStack);
         std::vector<Scope*> scopes;
-
+ 
         // Collect scopes in order
         while (!tempStack.empty()) {
             scopes.push_back(tempStack.top());
             tempStack.pop();
         }
-
+ 
         // Reverse to start with the global scope
         std::reverse(scopes.begin(), scopes.end());
-
+ 
         std::cout << "Symbol Table:\n";
         for (size_t i = 0; i < scopes.size(); ++i) {
             std::cout << "Scope " << i << (i == 0 ? " (Global)" : "") << ":\n";
@@ -135,5 +139,5 @@ public:
         }
     }
 };
-
+ 
 #endif // SYMBOL_TABLE_HPP

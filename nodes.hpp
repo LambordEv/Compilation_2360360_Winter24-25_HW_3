@@ -9,35 +9,38 @@
 namespace ast {
 
     enum SemanticNodeType {
-        NODE_Undecided      = -1,
-        NODE_Exp            = 0,
-        NODE_Statement      = 1,
-        NODE_Num            = 2,
-        NODE_NumB           = 3,
-        NODE_String         = 4,
-        NODE_Bool           = 5,
-        NODE_ID             = 6,
-        NODE_BinOP          = 7,
-        NODE_RelOP          = 8,
-        NODE_Not            = 9,
-        NODE_And            = 10,
-        NODE_Or             = 11,
-        NODE_Type           = 12,
-        NODE_Cast           = 13,
-        NODE_ExpList        = 14,
-        NODE_Call           = 15,
-        NODE_Statements     = 16,
-        NODE_Break          = 17,
-        NODE_Continue       = 18,
-        NODE_Return         = 19,
-        NODE_If             = 20,
-        NODE_While          = 21,
-        NODE_VarDecl        = 22,
-        NODE_Assign         = 23,
-        NODE_Formal         = 24,
-        NODE_Formals        = 25,
-        NODE_FuncDecl       = 26,
-        NODE_Funcs          = 27,
+        NODE_Undecided          = -1,
+        NODE_Exp                = 0,
+        NODE_Statement          = 1,
+        NODE_Num                = 2,
+        NODE_NumB               = 3,
+        NODE_String             = 4,
+        NODE_Bool               = 5,
+        NODE_ID                 = 6,
+        NODE_BinOP              = 7,
+        NODE_RelOP              = 8,
+        NODE_Not                = 9,
+        NODE_And                = 10,
+        NODE_Or                 = 11,
+        NODE_Type               = 12,
+        NODE_Cast               = 13,
+        NODE_ExpList            = 14,
+        NODE_Call               = 15,
+        NODE_Statements         = 16,
+        NODE_Break              = 17,
+        NODE_Continue           = 18,
+        NODE_Return             = 19,
+        NODE_If                 = 20,
+        NODE_While              = 21,
+        NODE_VarDecl            = 22,
+        NODE_Assign             = 23,
+        NODE_Formal             = 24,
+        NODE_Formals            = 25,
+        NODE_FuncDecl           = 26,
+        NODE_Funcs              = 27,
+        NODE_ArrayDereference   = 28,
+        NODE_ArrayType          = 29,
+        Node_ArrayAssign        = 30,
     };
 
     /* Arithmetic operations */
@@ -269,15 +272,59 @@ namespace ast {
         }
     };
 
+    class ArrayDereference : public Exp {
+    public:
+        // Identifier of the array
+        std::shared_ptr<ID> id;
+        // Index expression of the array
+        std::shared_ptr<Exp> index;
+
+        // Constructor that receives the identifier and the index expression
+        ArrayDereference(std::shared_ptr<ID> id, std::shared_ptr<Exp> index);
+
+        std::string getArrayId() const { return id->getValueStr(); }
+        std::shared_ptr<Exp> getIndex() const { return index; }
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    class Type : virtual public Node {
+    public:
+        Type() = default;
+    };    
+
     /* Type symbol */
-    class Type : public Node {
+    class PrimitiveType : public Type {
     public:
         // Type
         BuiltInType type;
 
         // Constructor that receives the type
-        explicit Type(BuiltInType type);
+        explicit PrimitiveType(BuiltInType type);
         BuiltInType getTypeOfType() const { return type; }
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
+    /* Type symbol For Array*/
+    class ArrayType : public PrimitiveType {
+    public:
+        // Size expression of the array
+        std::shared_ptr<Exp> size;
+    
+        // Constructor that receives the base type and size expression
+        explicit ArrayType(BuiltInType baseType, std::shared_ptr<Exp> size);
+    
+        // Getter methods
+        BuiltInType getBaseType() const { return type; }
+        std::shared_ptr<Exp> getSize() const { return size; }
+        int getSizeValue() const { 
+            return (size ? size->getValueInt() : 0); 
+        }
+    
         void accept(Visitor &visitor) override {
             visitor.visit(*this);
         }
@@ -289,10 +336,10 @@ namespace ast {
         // Expression to be cast
         std::shared_ptr<Exp> exp;
         // Target type
-        std::shared_ptr<Type> target_type;
+        std::shared_ptr<PrimitiveType> target_type;
 
         // Constructor that receives the expression and the target type
-        Cast(std::shared_ptr<Exp> exp, std::shared_ptr<Type> type);
+        Cast(std::shared_ptr<Exp> exp, std::shared_ptr<PrimitiveType> type);
         std::shared_ptr<Exp> getExpr() const { return exp; }
         BuiltInType getTargetType() const { return target_type->getTypeOfType(); }
         void accept(Visitor &visitor) override {
@@ -453,12 +500,12 @@ namespace ast {
         // Identifier of the variable
         std::shared_ptr<ID> id;
         // Type of the variable
-        std::shared_ptr<Type> type;
+        std::shared_ptr<PrimitiveType> type;
         // Initial value of the variable. If the variable is not initialized, this field is nullptr
         std::shared_ptr<Exp> init_exp;
 
         // Constructor that receives the identifier, the type, and the initial value expression
-        VarDecl(std::shared_ptr<ID> id, std::shared_ptr<Type> type, std::shared_ptr<Exp> init_exp = nullptr);
+        VarDecl(std::shared_ptr<ID> id, std::shared_ptr<PrimitiveType> type, std::shared_ptr<Exp> init_exp = nullptr);
 
         std::shared_ptr<ID> getVarId() const { return id; }
         std::string getValueStr() const { return id->getValueStr(); }
@@ -490,16 +537,37 @@ namespace ast {
         }
     };
 
+    class ArrayAssign : public Statement {
+    public:
+        // Identifier of the variable
+        std::shared_ptr<ID> id;
+        // Index expression of the array
+        std::shared_ptr<Exp> index;
+        // Expression to be assigned
+        std::shared_ptr<Exp> exp;
+
+        // Constructor that receives the identifier and the expression to be assigned
+        ArrayAssign(std::shared_ptr<ID> id, std::shared_ptr<Exp> exp, std::shared_ptr<Exp> index);
+
+        std::string getArrayId() const { return id->getValueStr(); }
+        std::shared_ptr<Exp> getAssignExpLine() const { return exp; }
+        std::shared_ptr<Exp> getIndex() const { return index; }
+
+        void accept(Visitor &visitor) override {
+            visitor.visit(*this);
+        }
+    };
+
     /* Formal parameter */
     class Formal : public Node {
     public:
         // Identifier of the parameter
         std::shared_ptr<ID> id;
         // Type of the parameter
-        std::shared_ptr<Type> type;
+        std::shared_ptr<PrimitiveType> type;
 
         // Constructor that receives the identifier and the type
-        Formal(std::shared_ptr<ID> id, std::shared_ptr<Type> type);
+        Formal(std::shared_ptr<ID> id, std::shared_ptr<PrimitiveType> type);
 
         std::string getFormalId() const { return id->getValueStr(); }
         BuiltInType getFormalType() const { 
@@ -559,15 +627,14 @@ namespace ast {
         // Identifier of the function
         std::shared_ptr<ID> id;
         // Return type of the function
-        std::shared_ptr<Type> return_type;
+        std::shared_ptr<PrimitiveType> return_type;
         // List of formal parameters
         std::shared_ptr<Formals> formals;
         // Body of the function
         std::shared_ptr<Statements> body;
 
         // Constructor that receives the identifier, the return type, the list of formal parameters, and the body
-        FuncDecl(std::shared_ptr<ID> id, std::shared_ptr<Type> return_type, std::shared_ptr<Formals> formals,
-                 std::shared_ptr<Statements> body);
+        FuncDecl(std::shared_ptr<ID> id, std::shared_ptr<PrimitiveType> return_type, std::shared_ptr<Formals> formals, std::shared_ptr<Statements> body);
 
         std::string getFuncId() const { return id->getValueStr(); }
         int getFuncIdLine() const { return id->getLine(); }

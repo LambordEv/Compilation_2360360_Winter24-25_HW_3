@@ -71,18 +71,21 @@ extern int yydebug;
     T_BYTE = 272,                  /* T_BYTE  */
     T_INT = 273,                   /* T_INT  */
     T_VOID = 274,                  /* T_VOID  */
-    T_ASSIGN = 275,                /* T_ASSIGN  */
-    T_OR = 276,                    /* T_OR  */
-    T_AND = 277,                   /* T_AND  */
-    T_RELOP = 278,                 /* T_RELOP  */
-    T_ADD_SUB = 279,               /* T_ADD_SUB  */
-    T_MUL_DIV = 280,               /* T_MUL_DIV  */
-    T_NOT = 281,                   /* T_NOT  */
-    T_LPAREN = 282,                /* T_LPAREN  */
-    T_RPAREN = 283,                /* T_RPAREN  */
-    T_LBRACE = 284,                /* T_LBRACE  */
-    T_RBRACE = 285,                /* T_RBRACE  */
-    T_ELSE = 286                   /* T_ELSE  */
+    T_COMMENT = 275,               /* T_COMMENT  */
+    T_ASSIGN = 276,                /* T_ASSIGN  */
+    T_OR = 277,                    /* T_OR  */
+    T_AND = 278,                   /* T_AND  */
+    T_RELOP = 279,                 /* T_RELOP  */
+    T_ADD_SUB = 280,               /* T_ADD_SUB  */
+    T_MUL_DIV = 281,               /* T_MUL_DIV  */
+    T_NOT = 282,                   /* T_NOT  */
+    T_LPAREN = 283,                /* T_LPAREN  */
+    T_RPAREN = 284,                /* T_RPAREN  */
+    T_LBRACE = 285,                /* T_LBRACE  */
+    T_RBRACE = 286,                /* T_RBRACE  */
+    T_RBRACK = 287,                /* T_RBRACK  */
+    T_LBRACK = 288,                /* T_LBRACK  */
+    T_ELSE = 289                   /* T_ELSE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif

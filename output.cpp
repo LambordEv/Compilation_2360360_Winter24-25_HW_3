@@ -96,6 +96,11 @@ namespace output {
         exit(0);
     }
 
+    void ErrorInvalidAssignArray(int lineno, const std::string &id_arr) {
+        std::cout << "line " << lineno << ": invalid assignment to array " << id_arr << std::endl;
+        exit(0);
+    }
+
 
     /* ScopePrinter class */
 
@@ -121,6 +126,10 @@ namespace output {
 
     void ScopePrinter::emitVar(const std::string &id, const ast::BuiltInType &type, int offset) {
         buffer << indent() << id << " " << toString(type) << " " << offset << std::endl;
+    }
+
+    void ScopePrinter::emitArr(const std::string &id, const ast::BuiltInType &type, int length , int offset ) {
+        buffer << indent() << id << "[" << length << "]" << " " << toString(type) << " " << offset <<  std::endl;
     }
 
     void ScopePrinter::emitFunc(const std::string &id, const ast::BuiltInType &returnType,

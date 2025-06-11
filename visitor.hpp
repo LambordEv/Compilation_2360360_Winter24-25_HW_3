@@ -12,7 +12,7 @@ namespace ast {
     class Not;
     class And;
     class Or;
-    class Type;
+    // class Type;
     class Cast;
     class ExpList;
     class Call;
@@ -28,6 +28,10 @@ namespace ast {
     class Formals;
     class FuncDecl;
     class Funcs;
+    class ArrayType;
+    class PrimitiveType;
+    class ArrayDereference;
+    class ArrayAssign;
 }
 
 class Visitor {
@@ -52,7 +56,15 @@ public:
 
     virtual void visit(ast::Or &node) = 0;
 
-    virtual void visit(ast::Type &node) = 0;
+    // virtual void visit(ast::Type &node) = 0;
+
+    virtual void visit(ast::ArrayType &node) = 0;
+
+    virtual void visit(ast::PrimitiveType &node) = 0;
+
+    virtual void visit(ast::ArrayDereference &node) = 0;
+
+    virtual void visit(ast::ArrayAssign &node) = 0;
 
     virtual void visit(ast::Cast &node) = 0;
 

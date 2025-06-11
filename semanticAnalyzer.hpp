@@ -256,8 +256,157 @@ public:
         }
     }
 
-    void visit(ast::Type& node) override {
+    void visit(ast::PrimitiveType& node) override {
         // Not Needed ?
+        
+    }
+
+    void visit(ast::ArrayType& node) override {
+        // Handle array type declarations
+        BuiltInType baseType = node.getBaseType();
+        
+        // Validate array size expression if present
+        if (node.getSize()) {
+            node.getSize()->accept(*this);
+            
+            // Array size must be numeric constant
+            if ((NODE_Num != node.getSize()->getType()) && (NODE_NumB != node.getSize()->getType())) {
+                errorMismatch(node.getLine());
+                return;
+            }
+            // Check if size is a declared variable by serching in symbol table
+            Symbol* sizeSymbol = symbolTable.getSymbol(node.getSize()->getValueStr(), node.getLine());
+            if((nullptr != sizeSymbol) || (NODE_ID == node.getSize()->getType())) {
+                errorMismatch(node.getLine());
+            }
+            
+            // Check for valid size if it's a byte
+            if (NODE_NumB == node.getSize()->getType()) {
+                int size = node.getSize()->getValueInt();
+                if (size > 255) {
+                    errorByteTooLarge(node.getLine(), size);
+                    return;
+                }
+            }
+        }
+        
+        // Set appropriate node type based on base type
+        switch (baseType) {
+            case BuiltInType::INT:
+                node.setType(NODE_Num);
+                break;
+            case BuiltInType::BYTE:
+                node.setType(NODE_NumB);
+                break;
+            case BuiltInType::BOOL:
+                node.setType(NODE_Bool);
+                break;
+            case BuiltInType::STRING:
+                node.setType(NODE_String);
+                break;
+            default:
+                node.setType(NODE_Undecided);
+                errorMismatch(node.getLine());
+                break;
+        }
+    }
+
+    void visit(ast::ArrayDereference& node) override {
+        // Check if array exists in symbol table
+        Symbol* arraySymbol = symbolTable.getSymbol(node.getArrayId(), node.getLine());
+        if (!arraySymbol) {
+            errorUndef(node.getLine(), node.getArrayId());
+        }
+    
+        // Check if symbol is actually an array
+        if (arraySymbol->getSymbolType() != ARRAY) {
+            errorMismatch(node.getLine());
+        }
+    
+        // Validate index expression
+        node.getIndex()->accept(*this);
+        
+        // Index must be INT or BYTE
+        if (node.getIndex()->getType() != NODE_Num && node.getIndex()->getType() != NODE_NumB) {
+            errorMismatch(node.getLine());
+        }
+    
+        // Check array bounds
+        if (arraySymbol->getArrayLength() > 0) {
+            int indexValue = node.getIndex()->getValueInt();
+            if (indexValue < 0 || indexValue >= arraySymbol->getArrayLength()) {
+                ErrorInvalidAssignArray(node.getLine(), node.getArrayId());
+            }
+        }
+    
+        // Set the type of the dereference expression to the array's element type
+        node.setType(builtInToNodeType(arraySymbol->getDataType()));
+    }
+
+    void visit(ast::ArrayAssign& node) override {
+        node.getAssignExpLine()->accept(*this); // Check Right Side Expression
+        node.id->accept(*this); // Check Left Side Identifier
+
+        Symbol* arraySymbol = symbolTable.getSymbol(node.getArrayId(), node.getLine());
+        if (!arraySymbol) {
+            errorUndef(node.getLine(), node.getArrayId());
+        }
+        if(arraySymbol->getSymbolType() != ARRAY) {
+            errorMismatch(node.getLine());
+        }
+    
+        // Validate index expression 
+        node.getIndex()->accept(*this);
+        
+        // Index must be INT or BYTE
+        if (node.getIndex()->getType() != NODE_Num && node.getIndex()->getType() != NODE_NumB) {
+            errorMismatch(node.getLine());
+        }
+
+        // Index should be checked that it is in the bounds of the array, according to what is saved in the symbolTable
+        if (arraySymbol->getArrayLength() > 0) {
+            if (node.getIndex()->getType() == NODE_NumB) {
+                int indexValue = node.getIndex()->getValueInt();
+                if (indexValue < 0 || indexValue >= arraySymbol->getArrayLength()) {
+                    ErrorInvalidAssignArray(node.getLine(), node.getArrayId());
+                }
+            } else if (node.getIndex()->getType() == NODE_Num) {
+                int indexValue = node.getIndex()->getValueInt();
+                if (indexValue < 0 || indexValue >= arraySymbol->getArrayLength()) {
+                    ErrorInvalidAssignArray(node.getLine(), node.getArrayId());
+                }
+            }
+        }
+    
+        BuiltInType arrayType = arraySymbol->getDataType();
+        BuiltInType assignType = BuiltInType::TYPE_ERROR;
+    
+        // Get type of assignment expression
+        if (node.getAssignExpLine()->getType() == NODE_ID) {
+            Symbol* assignSymbol = symbolTable.getSymbol(node.getAssignExpLine()->getValueStr(), 
+                                                        node.getAssignExpLine()->getLine());
+            if (!assignSymbol) {
+                errorUndef(node.getAssignExpLine()->getLine(), node.getAssignExpLine()->getValueStr());
+            }
+            if (ARRAY == assignSymbol->getSymbolType()) {
+                errorMismatch(node.getAssignExpLine()->getLine());
+            }
+            assignType = assignSymbol->getDataType();
+        } else if (node.getAssignExpLine()->getType() == NODE_Num) {
+            assignType = BuiltInType::INT;
+        } else if (node.getAssignExpLine()->getType() == NODE_NumB) {
+            assignType = BuiltInType::BYTE;
+        } else if (node.getAssignExpLine()->getType() == NODE_Bool) {
+            assignType = BuiltInType::BOOL;
+        } else if (node.getAssignExpLine()->getType() == NODE_String) {
+            assignType = BuiltInType::STRING;
+        }
+    
+        // Check type compatibility
+        if (arrayType != assignType && 
+            !(arrayType == BuiltInType::INT && assignType == BuiltInType::BYTE)) {
+            errorMismatch(node.getLine());
+        }
     }
 
     void visit(ast::Cast& node) override {
@@ -321,34 +470,67 @@ public:
         node.getArgsExp()->accept(*this);
 
         vector<BuiltInType> paramsTypesInSymbolTable = func->getParameterTypes();
+        vector<string> paramsTypesInSymbolTableStr = convertVectorToStrings(paramsTypesInSymbolTable);
+        
         vector<shared_ptr<Exp>> paramsInFunc = node.getArgs();
-
         vector<BuiltInType> types;
         for(auto& exp : paramsInFunc) {
-            if (exp->getType() == NODE_ID) {
-                Symbol* expSymbol = symbolTable.getSymbol(exp->getValueStr(), exp->getLine());
-                if (expSymbol == nullptr) {
-                    errorUndef(exp->getLine(), exp->getValueStr());
-                }
-                types.push_back(expSymbol->getDataType());
-            } else if (exp->getType() == NODE_Num) {
-                // cout << "Num type is not supported in function calls" << endl;
-                types.push_back(BuiltInType::INT);
-            } else if (exp->getType() == NODE_NumB) {
-                types.push_back(BuiltInType::BYTE);
-            } else if (exp->getType() == NODE_Bool) {
-                types.push_back(BuiltInType::BOOL);
-            } else if (exp->getType() == NODE_String) {
-                // cout << "String type is not supported in function calls" << endl;
-                types.push_back(BuiltInType::STRING);
-            } else {
-                types.push_back(BuiltInType::TYPE_ERROR);
+            // TODO Remember me (Evgeny)
+            // if (exp->getType() == NODE_ID) {
+            //     Symbol* expSymbol = symbolTable.getSymbol(exp->getValueStr(), exp->getLine());
+            //     if (expSymbol == nullptr) {
+            //         errorUndef(exp->getLine(), exp->getValueStr());
+            //     }
+            //     if (expSymbol->getSymbolType() == ARRAY || expSymbol->getSymbolType() == FUNCTION) {
+            //         errorPrototypeMismatch(exp->getLine(), node.getFuncId(), paramsTypesInSymbolTableStr);
+            //     }
+            //     types.push_back(expSymbol->getDataType());
+            // } else if (exp->getType() == NODE_Num) {
+            //     // cout << "Num type is not supported in function calls" << endl;
+            //     types.push_back(BuiltInType::INT);
+            // } else if (exp->getType() == NODE_NumB) {
+            //     types.push_back(BuiltInType::BYTE);
+            // } else if (exp->getType() == NODE_Bool) {
+            //     types.push_back(BuiltInType::BOOL);
+            // } else if (exp->getType() == NODE_String) {
+            //     // cout << "String type is not supported in function calls" << endl;
+            //     types.push_back(BuiltInType::STRING);
+            // } else {
+            //     types.push_back(BuiltInType::TYPE_ERROR);
+            // }
+            switch(exp->getType()) {
+                case NODE_ID:
+                    {
+                        Symbol* expSymbol = symbolTable.getSymbol(exp->getValueStr(), exp->getLine());
+                        if (expSymbol == nullptr) {
+                            errorUndef(exp->getLine(), exp->getValueStr());
+                        }
+                        if (expSymbol->getSymbolType() == ARRAY || expSymbol->getSymbolType() == FUNCTION) {
+                            errorPrototypeMismatch(exp->getLine(), node.getFuncId(), paramsTypesInSymbolTableStr);
+                        }
+                        types.push_back(expSymbol->getDataType());
+                    }
+                    break;
+                case NODE_Num:
+                    types.push_back(BuiltInType::INT);
+                    break;
+                case NODE_NumB:
+                    types.push_back(BuiltInType::BYTE);
+                    break;
+                case NODE_Bool:
+                    types.push_back(BuiltInType::BOOL);
+                    break;
+                case NODE_String:
+                    types.push_back(BuiltInType::STRING);
+                    break;
+                default:
+                    types.push_back(BuiltInType::TYPE_ERROR);
+                    break;
             }
         }
 
         // in error which vector should be passed as argument????????????????????
         vector<string> typesStr = convertVectorToStrings(types);
-        vector<string> paramsTypesInSymbolTableStr = convertVectorToStrings(paramsTypesInSymbolTable);
         if (paramsTypesInSymbolTable.size() != types.size()) {
             errorPrototypeMismatch(node.getLine(), node.getFuncId(), paramsTypesInSymbolTableStr);
         }
@@ -509,12 +691,27 @@ public:
             errorDef(node.getLine(), node.getValueStr());
         }
 
-        symbolTable.addVariableSymbol(node.getValueStr(), node.getVarType(), node.getLine());
+        if(node.getType() == NODE_ArrayType) {
+        // If it's an array, add it as an array symbol
+            shared_ptr<ArrayType> arrayTypeNode = dynamic_pointer_cast<ArrayType>(node.type);
+            arrayTypeNode->accept(*this);
+            symbolTable.addArraySymbol(node.getValueStr(), node.getVarType(), arrayTypeNode->getSizeValue(), node.getLine());
+        } else {
+            symbolTable.addVariableSymbol(node.getValueStr(), node.getVarType(), node.getLine());
+        }
+        
         Symbol* symbol = symbolTable.getSymbol(node.getValueStr(), node.getLine());
         if (symbol == nullptr) {
             cout << "In Visit VarDecl symbol returned as nullptr, WTF?!" << endl;
         }
-        printer.emitVar(node.getValueStr(), symbol->getDataType(), symbol->getOffset());
+        
+        
+        // Add array emission for array variables
+        if (ARRAY == symbol->getSymbolType()) {
+            printer.emitArr(node.getValueStr(), symbol->getDataType(), symbol->getArrayLength(), symbol->getOffset());
+        } else {
+            printer.emitVar(node.getValueStr(), symbol->getDataType(), symbol->getOffset());
+        }
 
 
         node.getVarId()->accept(*this);
@@ -534,15 +731,18 @@ public:
     }
 
     void visit(ast::Assign& node) override {
-        // printf("Get Symbol in %s\n", "Visit Assign");
+        node.getAssignExp()->accept(*this); // Check Right Hand Side Expression
+        node.id->accept(*this); // Check Left Hand Side Expression
+
         Symbol* var = symbolTable.getSymbol(node.getValueStr(), node.getLine());
         if (!var) {
             errorUndef(node.getLine(), node.getValueStr());
         }
         if (var->getSymbolType() == FUNCTION) {
             errorDefAsFunc(node.getLine(), node.getValueStr());
+        } else if (var->getSymbolType() == ARRAY) {
+            ErrorInvalidAssignArray(node.getLine(), node.getValueStr());
         }
-        node.getAssignExp()->accept(*this);
 
         BuiltInType varType = var->getDataType();
         BuiltInType expType = BuiltInType::TYPE_ERROR;
@@ -553,6 +753,8 @@ public:
             }
             else if (expSymbol->getSymbolType() == FUNCTION) {
                 errorDefAsFunc(node.getAssignExp()->getLine(), node.getAssignExp()->getValueStr());
+            } else if (expSymbol->getSymbolType() == ARRAY) {
+                errorMismatch(node.getAssignExp()->getLine());
             }
             expType = expSymbol->getDataType();
         } else if (node.getAssignExp()->getType() == NODE_Num) {
